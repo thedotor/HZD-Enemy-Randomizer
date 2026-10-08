@@ -1,0 +1,52 @@
+HOW TO BUILD HZD_EnemyRandomizer_Map.exe FROM THIS SOURCE (Windows)
+
+You only need Go. No other downloads, no internet during the build.
+
+1. Install Go 1.24 or newer from https://go.dev/dl/ (the Windows .msi installer).
+   Check it worked: open Command Prompt and type   go version
+
+2. Download this repository (GitHub: Code > Download ZIP) and unzip it into a folder,
+   e.g. C:\hzdmap (keep the folder layout: main.go etc. at the top, plus the data, mapdata
+   and web folders).
+
+3. Open Command Prompt in that folder:
+     cd C:\hzdmap
+
+4. Build:
+     go build -trimpath -o HZD_EnemyRandomizer_Map.exe .
+
+   That's it - HZD_EnemyRandomizer_Map.exe appears in the folder (about 11 MB).
+   With Go 1.24.7 it is byte-for-byte the same file as the released one (same SHA-256).
+
+Optional
+ - Run the self-test:   go test ./...
+ - Building on Linux/macOS for Windows:
+     GOOS=windows GOARCH=amd64 go build -trimpath -o HZD_EnemyRandomizer_Map.exe .
+
+Changing the version number or icon (optional, needs internet once)
+ The icon and the version shown in the exe's Properties come from rsrc_windows_amd64.syso,
+ which is already included. To make a new one:
+   cd tools\winres
+   go build -o winres.exe .
+   winres.exe ..\..\rsrc_windows_amd64.syso "Horizon Zero Dawn Enemy Randomizer (Map)" "HZD Enemy Randomizer Map" "1.1.0.0" "HZD_EnemyRandomizer_Map.exe" icon_1024.png
+   cd ..\..
+ Then change   const version = "1.1.0"   in main.go to match, and build again (step 4).
+ (The first "go build" in tools\winres downloads one library, github.com/tc-hib/winres.)
+
+What's where
+ main.go, folder.go, winui_*.go   the program window, local web server and game-folder handling
+ mapgen.go, crossover.go          the randomizer: areas, groups, bosses, herds, humans, picks
+ toughness.go, preview.go         health/damage modifiers, and the Preview counts
+ gen.go, hash.go                  writing the patch file the game loads (archive + preload list)
+ archive.go, oodle_*.go           reading the game's own archives (Packed_DX12\*.bin) with the
+                                  game's oo2core_*_win64.dll (Windows only)
+ gamedata.go, texture.go          what is read from the game (listed in mapdata/manifest.json with
+                                  a SHA-256 for each file), the map picture and icons made from it,
+                                  and the local cache file
+ web/                             the map page (index.html), the app icon and the Deathbringer icon
+ mapdata/sites.json               the machine/human spots: positions, file names and offsets
+ mapdata/manifest.json            which game files are needed, with their sizes and SHA-256
+ data/toughness_src.json          ids of the health/damage templates and damage types
+
+No game files are included in the source or the program - everything from the game is read from
+the player's own installation when the program runs.

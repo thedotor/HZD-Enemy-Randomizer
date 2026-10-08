@@ -1,0 +1,265 @@
+﻿Horizon Zero Dawn - Enemy Randomizer: Map - development history
+These are the builds made before version 1.0.0 (development build numbers 1.3 - 2.9.2),
+newest first. Version 1.0.0 has the same features as development build 2.9.2.
+
+DEV BUILD 2.9.2
+ - Removed the experimental Machine size slider (added in 2.9). Tested in game: the game ignores
+   the size of a spawn spot, and the engine has no size setting for machines (it only resizes
+   things from scripted animations). Stretching the model itself would leave the skeleton and
+   hitboxes at normal size, so it isn't worth doing.
+
+DEV BUILD 2.8
+ - Humans ⇄ machines (Humans tab, experimental): some machine spots get a human enemy instead,
+   and some human spots get a machine. Two sliders (0-50%, default 10%):
+     Machines → humans - small machines become archers/brawlers, medium ones any fighter,
+                         Large ones heavies, flyers become snipers. In The Cut they become
+                         Frozen Wilds bandits; elsewhere bandits or Eclipse.
+     Humans → machines - Small or Medium machines; heavies become a Large machine only where
+                         there's room. Bandit camps are left out unless you tick
+                         "Bandit camps can get machines too".
+   Only single spots are swapped - herds, groups, bosses and hand-picked spots never are. Quest,
+   Cauldron and Hunting Ground spots only if those are ticked. Uses your switched-off machines,
+   Rare/Common weights and human toughness. Has its own seed. Asks first.
+   With spoilers on, a machine spot that became a person shows a small person in the faction
+   colour; a person that became a machine shows that machine in a gold diamond.
+   Untested in game: people may wander or stand idle at machine spots, and machines may get
+   stuck in human areas. Make a manual save; untick and rebuild if anything breaks.
+ - Fixed: with spoilers on, a few map markers and tooltips could show a human's change on a
+   machine spot that happened to share its number.
+
+DEV BUILD 2.7 - new layout
+ - The right-hand panel is now split into four tabs:
+     World    - Whole map, Areas, Area settings, Roaming herds (herd size moved here)
+     Machines - Which fights (Cauldrons, story, Hunting Grounds), Bosses, Extra machines
+                (Rockbreaker, Corruptor, Deathbringer), Frozen Wilds & flyers, Machine toughness,
+                spots picked by hand
+     Humans   - Human enemies, Human toughness, type weights
+     Setup    - Game folder, Recent builds, Presets, Uninstall
+   Each tab shows a short status under its name (e.g. "Whole map", "3 risky", "Swap camps").
+   Wherever the README says "Options", look on the Machines tab.
+ - Build & install, Preview and Surprise me (🎲) are always at the bottom of the panel.
+ - Above them, orange tags list every risky option that's switched on - click one to jump to it.
+ - The game-folder status sits at the top (click it to change the folder).
+ - Preview opens as its own panel beside the map (× to close).
+ - The map key can be folded away (Key ▸ / ▾), and the Machines list help is tucked under
+   "How this list works".
+ - Settings, seeds and builds are unchanged - same setup, same result.
+
+DEV BUILD 2.6
+ - Preview (Install section): counts what your setup will put in the world before you install -
+   every machine, how many map spots and how many herd machines, and how much of it is Large.
+   Nothing is installed. Change a setting and press Preview again.
+ - Pick a spot's machine yourself: click any machine on the map and choose
+     Randomize as normal - follows your areas and ticks (default)
+     Keep it as it is    - this spot never changes
+     a machine           - that machine goes there, whatever else is set
+   Picked spots get a small gold dot (grey = kept). Hand-picked machines are placed even on spots
+   whose tick is off, and they skip the room check - a big machine in a tight spot can get stuck.
+   "Clear picked spots" (Options) removes them all.
+ - Human weights: Human enemies > "How often each type is picked" - Rare / Normal / Common for
+   each human type, like the machines.
+ - The one Deathbringer that's already in the game's patrol list (part of a story fight) now
+   only changes when "Randomize boss fights" is ticked.
+
+DEV BUILD 2.5.1
+ - The Deathbringer has its own map icon.
+
+DEV BUILD 2.5
+ - "Add the Corruptor to the Large group" (Options): Corruptors can appear wherever Large
+   machines can, in areas and roaming herds. They corrupt the machines around them.
+ - "Add the Deathbringer to the Large group" (Options, experimental): the same for
+   Deathbringers. The game has no open-world Deathbringer, so this reuses the one from a
+   main-quest boss fight - it may stand idle or act oddly away from its arena. Herds get at
+   most one. Make a manual save first; untick and rebuild if it misbehaves.
+   Both ask first, and both are off by default. Unticking puts them back in "Never randomized".
+
+DEV BUILD 2.4
+ - 357 more machine spots found and added (920 in total, was 563): corrupted zones, the machines
+   around Tallnecks, more main quest, side quest and tribe quest fights, and a few world spots
+   the old scan missed. They follow your areas and ticks like the others (quest fights follow the
+   story-missions tick). Spots you already had keep their numbering, so a seed you liked still
+   gives (almost always) the same machines there.
+ - Hunting Grounds (Options): "Also randomize Hunting Grounds" swaps the machines at all the
+   Hunting Grounds, including the Frozen Wilds one. Asks first: trials that need a particular
+   machine may become impossible while it's on - finish the trials you care about first.
+ - Bosses (Options): "Randomize boss fights" swaps 19 boss machines - Deathbringers and
+   Corruptors in the main quest, the Sawtooth fight with Rost, the Frozen Wilds Frostclaws,
+   the Fireclaw in Cauldron EPSILON and the Rockbreaker quest. Choose what they become:
+     Big machine - another Large machine (default)
+     Medium+     - any Medium or Large machine
+     Anything    - anything at all
+   Has its own seed. Switched-off machines are never picked. Boss spots have a dotted gold ring
+   on the map. Asks first: scripted bosses (mounted guns, parts to shoot off) may not finish with
+   a different machine. MAKE A MANUAL SAVE BEFORE EACH BOSS. If one gets stuck: untick, Build &
+   install, load that save.
+
+DEV BUILD 2.3
+ - Human toughness (in the Human enemies section): Health and Damage sliders (25% - 300%) for
+   Bandits, Eclipse and Frozen Wilds bandits. Open "Fine-tune each type" for a pair of sliders
+   per enemy type (archer, heavy, priest, sniper...). They stack with the faction slider:
+   Bandits Health 200% x Bandit heavy 150% = 300%.
+   Works even with the human Mode set to Off, and covers every human enemy of that faction:
+   camps, patrols, Eclipse ambushes, quest fights and Cauldron XI.
+   Enemies that already hit harder than normal (e.g. bandit heavies) have that bonus scaled
+   rather than replaced. Stealth takedowns that always kill outright may still do so.
+   "Reset humans to 100%" clears all of them.
+
+DEV BUILD 2.2
+ - Per-machine HP and DMG sliders under every machine in the Machines list (left), 25% - 300%.
+   They stack with the size-group sliders: Large Health 150% x Thunderjaw HP 200% = 300%.
+   Hover the % to see the total. "Reset all to 100%" (Machine toughness) clears both.
+   Switched-off machines don't show sliders (they're replaced anyway).
+
+DEV BUILD 2.1
+ - Machine toughness (right panel): Health and Damage sliders (25% - 300%) for each size group
+   (Small, Medium, Large, Flyer, Other*). 100% = normal; they work on top of your game difficulty.
+   Health 200% = machines take half damage from your arrows, bombs, fire, shock, frost hits,
+   corruption, melee and Silent Strikes. Tearing parts off is not changed.
+   Damage 50% = their attacks hurt you half as much.
+   Applies to every machine placed in the world, including Cauldrons, story fights and bosses.
+   Not applied to roaming herds and patrols (the game spawns those a different way).
+   * Other = machines in no size group: Corruptor, Deathbringer, Tallneck (and the Rockbreaker
+     unless you added it to Large).
+   Uses the same damage modifiers the game already puts on its toughest human enemies.
+
+DEV BUILD 2.0
+ - Human enemies: a new "Human enemies" section randomizes bandits, Eclipse and Frozen Wilds
+   bandits (570 spawns: bandit camps, Eclipse sites, patrols, Cauldron XI, quest fights).
+   Friendly people (villagers, hunters, traders) are never touched.
+     Same faction - each human becomes another type of their own faction (a bandit archer might
+                    become a bandit heavy). Camps always stay on one side. Safest.
+     Swap camps   - each encounter switches to another faction (an Eclipse site becomes bandits
+                    and so on); archers stay archers, heavies stay heavies.
+     Chaos        - any type anywhere (asks first): factions get mixed and may fight each other.
+   "Also swap the faction of bandit camps" (asks first): bandit camps are activities, and a camp
+   full of Eclipse might not count as cleared - without the tick, camps only get mixed bandit types.
+   "Frozen Wilds bandits can appear outside The Cut": lets the tougher FW bandits turn up anywhere.
+   Quest and Cauldron fights follow the ticks under Options. Areas and Whole map don't change humans.
+ - "Humans" button in the top bar shows human enemies on the map as diamonds
+   (orange = bandits, purple = Eclipse, blue = Frozen Wilds bandits).
+
+DEV BUILD 1.9
+ - Roaming encounters: Shell-Walker convoys (with their Watcher / Longleg / Behemoth escorts) and
+   random machine encounters (Glinthawk ambushes, the alarmed Longleg, Eclipse fleeing machines,
+   Glinthawk flocks) are now randomized too - 25 more spawns. They move or appear in random
+   places, so they aren't shown on the map; they follow the "Roaming herds & patrols" setting
+   (or the Whole map setting when it includes herds).
+ - Rockbreaker option (Options, asks first): adds the Rockbreaker to the Large group so it can
+   appear wherever Thunderjaws, Behemoths, Frostclaws and Fireclaws can. Outside its quarries it
+   may struggle to burrow - untick and rebuild if it causes trouble.
+ - Note: the Frozen Wilds has no separate roaming herds - its machines are all at fixed spots,
+   which the map already covers.
+
+DEV BUILD 1.8.1
+ - Fix: big machines spawning inside each other. Many spots spawn a small group close together
+   (e.g. "3 Watchers within 10 m"). When a bigger machine takes over such a group it now spawns
+   fewer of them: 1 for Large machines, up to 2 for flyers, up to 3 for Medium replacing Small.
+ - Single spots only get a Large machine (Thunderjaw, Behemoth, Frostclaw, Fireclaw) if no other
+   spot of that encounter is within 12 m and no other big machine is within 30 m; otherwise a
+   smaller machine is picked there instead.
+ - Roaming herds: a Large machine taking over a herd member now comes as 1 at normal herd size.
+
+DEV BUILD 1.8
+ - Herd size (Options): make roaming herds and patrols smaller or bigger, from 25% to 300%.
+   It works on its own (herd mode Off) or together with randomized herds.
+ - Safer mixed herds: when a bigger machine takes over a herd member of smaller machines, its
+   count is capped (at normal size: up to 6 medium, 1 large or 3 flyers; the caps grow with the
+   herd size). Before, Chaotic herds could turn 20 Grazers into 20 of anything.
+ - Big herds put many more machines on screen; above 150% the page shows a warning.
+
+DEV BUILD 1.7
+ - "Surprise me" (Install box): picks a random mode and seed for the whole map and roaming herds,
+   then builds and installs straight away. Spoilers stay hidden.
+ - Rare / Normal / Common (Machines list, left): how often each machine is picked when spots are
+   swapped. Click the button to cycle it. Common is about 8x as likely as Rare. With everything on
+   Normal you get exactly the same layouts as before for the same seed.
+ - Find a machine (top bar): type a name (e.g. "Sawtooth") to highlight its spots and fade the
+   rest; it also shows how many spots it has. Esc or the x clears it.
+ - Presets (right panel): save your current setup under a name, load it later, or delete it.
+   "Copy code" copies a short code (starts with HZD1-) that you can send to someone; paste a
+   code into the box and press "Load code" to use it. Presets don't include your game folder.
+ - Recent builds (Install box): your last 10 builds with time, mode and how many spots changed.
+   "Restore" puts that setup back; press Build & install to get the same layout again.
+ - Fixed: a small coloured dot was drawn over some machine icons on the map.
+
+DEV BUILD 1.6.1
+ - The Machines list has moved to its own column on the left-hand side of the page.
+
+DEV BUILD 1.6
+ - "Machines" list (left-hand side of the page): every machine with an on/off switch.
+   Switch one off to keep it out of your game - every map spot and roaming-herd member that
+   would be that machine gets a different machine of a similar size instead (another size if the
+   whole group is off), and nothing is ever turned into it. This works even where an area's
+   Mode is Off. "All on" switches everything back on.
+   Their spots on the map get a red slash.
+   Limits: spots inside Cauldrons and story missions are only replaced if those are ticked under
+   Options; Hunting Grounds trials, bosses and scripted quest spawns are never changed.
+
+DEV BUILD 1.5
+ - Freeze Bellowback is now its own machine (Medium group): its spots are randomized and it can
+   turn up anywhere a Medium machine can. Codename: spraybot_cryo.
+ - New "Corrupted / Daemonic" slider (in each area's settings and in Whole map): the chance that
+   a normal spot gets the corrupted version of whatever machine ends up there - or the Daemonic
+   version inside The Cut. 0% (default) keeps everything as it was. Machines without such a
+   version (e.g. Frostclaw has no corrupted version) stay normal. Corrupted/Daemonic machines may
+   fight nearby normal machines. Roaming herds always use normal versions.
+ - With "Show spoilers" on, the list and tooltips say "(corrupted)" or "(Daemonic)" where that
+   version was placed.
+
+DEV BUILD 1.4.6
+ - Spoilers are hidden: after Build & install you only see how many spots changed. The list of
+   what became what, the gold rings on changed markers and the "→ new machine" in tooltips
+   stay hidden until you press "Show spoilers" (press again to hide them).
+
+DEV BUILD 1.4.5
+ - "Whole map" box at the top of the panel: tick "Randomize the whole map at once" to use one
+   setting (Grouped/Chaotic, seed, swap chance, difficulty) for every machine on the map.
+   Tick "Include roaming herds & patrols" to give herds the same mode and seed too.
+   Your areas are kept but paused (greyed out) while it is ticked - untick it to go back to them.
+   Cauldrons, story missions and Frozen Wilds machines still follow the ticks under Options.
+
+DEV BUILD 1.4.4
+ - Fixes a Windows Defender false alarm (Trojan:Win32/Bearfoos.B!ml). The folder picker and
+   "open the browser" step now use Windows' own built-in functions instead of starting a hidden
+   PowerShell window, and the program now carries proper version/description details.
+
+DEV BUILD 1.4.3
+ - Click a name to switch it on and off: region names (on the map or the buttons in the Areas
+   panel) and area names on the map. First click on a region makes it an area (on); after that
+   each click switches it off / on.  ● = on (filled in the area's colour), ○ = off (dashed).
+   Clicking a name in the Areas list still opens that area's settings - use its switch there.
+
+DEV BUILD 1.4.2
+ - On/off switch next to every area in the Areas list (and Rest of the world).
+   Off = the area is ignored but kept with all its settings, so you can switch it back on later.
+   Spots inside a switched-off area follow whatever is underneath it (another area, or Rest of
+   the world). Switching off Rest of the world leaves everything outside your areas unchanged.
+   Switched-off areas show dashed and faded on the map, with "(off)" after the name.
+   Remember to press Build & install after switching areas on or off.
+
+DEV BUILD 1.4.1
+ - Game folder can be changed any time: the "Game folder" box at the top of the panel shows
+   where the game is (Found / Not found). Press Change, then Browse... (pick the folder in a
+   normal Windows window), "Find it for me" (searches your Steam libraries), or paste a path.
+   You can choose the Horizon Zero Dawn folder or its Packed_DX12 folder.
+ - Moved to another PC or drive? If the saved folder isn't there, the program first searches for
+   the game, and if it can't find it the box opens and asks where it is now.
+
+DEV BUILD 1.4
+ - Mixed herds: with "Roaming herds & patrols" on, every herd member is rolled on its own,
+   so herds and patrols come out as a mix of machines instead of one type becoming another.
+ - Ready-made regions: dashed boxes for the big map regions (The Embrace, Nora Sacred Land,
+   Carja Sundom, Meridian & the Mesa, The Jewel & the south, Sunfall & the west,
+   The Claim & Free Heap, Banuk lands, The Cut). Click a region's label on the map, or its
+   button in the Areas panel, to turn it into an area. "Regions" in the top bar hides the boxes.
+ - Frozen Wilds machines anywhere: two new tick boxes let Scorchers, Frostclaws and Fireclaws
+   appear outside The Cut - one for Grouped areas (and Grouped herds), one for Chaotic.
+   Unticked (the default), they only appear in The Cut.
+
+DEV BUILD 1.3
+ - Frozen Wilds (The Cut): its machine sites are on the map and can be randomized,
+   including Scorchers, Frostclaws and Fireclaws.
+ - Cauldron entrances are on the map (SIGMA, RHO, XI, ZETA and EPSILON). Hover one to see
+   how many machine spawns are inside.
+ - Ticking "Also randomize Cauldrons" or "Also randomize story-mission fights" now shows
+   a warning first, and a reminder stays visible while it is on.

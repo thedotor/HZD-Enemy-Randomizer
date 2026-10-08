@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HZD Enemy Randomizer — Map</title>
+<link rel="icon" type="image/png" href="/img/icon.png">
+<style>
+:root{
+  --bg:#0b0f12; --panel:#10171bdd; --panel-solid:#121a1f; --line:#2b3a43; --text:#ecf1f3; --dim:#93a3ab;
+  --gold:#e8b34b; --accent:#ff8a3d; --teal:#3fd0c9;
+  --small:#5fd18a; --medium:#f2c14e; --large:#ef5b5b; --flyer:#5aa9ff; --off:#7d8a92;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:14px/1.4 "Segoe UI",system-ui,sans-serif;overflow:hidden}
+#view{position:absolute;inset:0;left:310px;right:380px;overflow:hidden;cursor:grab;background:#06090b}
+#view.drawing{cursor:crosshair}
+#view.panning{cursor:grabbing}
+#world{position:absolute;left:0;top:0;transform-origin:0 0}
+#world img.map{display:block;user-select:none;-webkit-user-drag:none;filter:saturate(.9) brightness(.92)}
+#overlay{position:absolute;left:0;top:0;overflow:visible}
+.vignette{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 160px 40px #000c}
+/* top bar over the map */
+#topbar{position:absolute;left:16px;right:16px;top:14px;display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;z-index:3;pointer-events:none}
+#topbar>*{pointer-events:auto}
+#title{font-size:15px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);text-shadow:0 1px 6px #000;margin-right:10px}
+.tool{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:7px 11px;cursor:pointer;font:inherit;backdrop-filter:blur(4px)}
+.tool.on{border-color:var(--gold);color:var(--gold)}
+.tool,#title{white-space:nowrap}
+.findbox{display:inline-flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:6px;backdrop-filter:blur(4px)}
+.findbox input{background:none;border:0;color:var(--text);font:inherit;padding:7px 8px;width:160px;outline:none}
+.findbox button{background:none;border:0;padding:4px 8px;color:var(--dim)}
+.wt{flex:none;font-size:11px;padding:2px 4px;border-radius:9px;border:1px solid #344650;background:#0d1418;color:var(--dim);width:56px;text-align:center}
+.wt.r{color:#9fb0b8;border-style:dashed}.wt.c{color:#06201f;background:var(--gold);border-color:var(--gold);font-weight:700}
+.hist{font-size:12px;margin-top:6px}
+.hist div{display:flex;align-items:center;gap:6px;border-bottom:1px solid #222d33;padding:4px 0}
+.hist .ht{flex:1;min-width:0}
+.hist .ht b{font-weight:600;color:var(--text)}
+.hist .ht span{color:var(--dim)}
+.plist div{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #222d33}
+.plist .pn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plist button,.hist button{padding:3px 8px;font-size:12px}
+#surprise{background:linear-gradient(90deg,#c77dff,#3fd0c9);border:0;color:#0b1014;font-weight:700}
+#tophint{white-space:nowrap}
+@media (max-width:2100px){#tophint{display:none}}
+#title{display:none}
+@media (max-width:1400px){.findbox input{width:120px}}
+#legend{position:absolute;left:16px;bottom:14px;z-index:3;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--dim);display:flex;gap:12px;flex-wrap:wrap;max-width:calc(100% - 32px);backdrop-filter:blur(4px)}
+#legtg{background:none;border:0;padding:0 4px 0 0;color:var(--gold);font-size:12px;font-weight:600}
+#legend.min>span{display:none}
+#legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px;border:2px solid}
+#hint{position:absolute;right:16px;bottom:14px;z-index:3;font-size:12px;color:var(--dim);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+/* side panel */
+aside#left{position:absolute;top:0;left:0;bottom:0;width:310px;border-right:1px solid var(--line);background:var(--panel-solid);overflow:auto;padding:14px 12px 30px}
+aside#right{position:absolute;top:0;right:0;bottom:0;width:380px;border-left:1px solid var(--line);background:var(--panel-solid);display:flex;flex-direction:column;overflow:hidden}
+#rhead{display:flex;align-items:center;gap:8px;padding:12px 14px 6px}
+.rtitle{flex:1;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);font-weight:600}
+.rtitle span{color:var(--dim);letter-spacing:0;font-weight:400;font-size:11px}
+#rgame{border:0;cursor:pointer}
+#tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);padding:0 8px}
+#tabs button{background:none;border:0;border-bottom:3px solid transparent;border-radius:0;padding:8px 2px 6px;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:1px;font-size:13px}
+#tabs button:hover{color:var(--text)}
+#tabs button.on{color:var(--text);border-bottom-color:var(--teal);font-weight:600}
+#tabs small{font-size:10px;color:var(--dim);font-weight:400;min-height:13px;white-space:nowrap}
+#tabs small.warn{color:#ffb36b}
+#rbody{flex:1;overflow:auto;padding:12px 14px 20px}
+.tab{display:none}.tab.on{display:block}
+#rfoot{border-top:1px solid var(--line);background:#0f161a;padding:10px 14px 12px;max-height:45vh;overflow:auto;box-shadow:0 -6px 16px #0006}
+#rfoot #build{flex:1;padding:9px 10px;font-size:15px}
+#risky{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+#risky:empty{display:none}
+#risky button{font-size:11px;padding:2px 8px;border-radius:10px;background:#2a1d12;border:1px solid #6b4422;color:#ffcf9e}
+#preview{position:fixed;right:392px;bottom:14px;width:340px;max-height:calc(100vh - 90px);overflow:auto;z-index:12;background:var(--panel-solid);border:1px solid var(--gold);border-radius:10px;padding:10px 12px;box-shadow:0 10px 30px #000c;display:none}
+.pvhead{display:flex;align-items:center;margin-bottom:6px}.pvhead b{flex:1;color:var(--gold);font-size:13px;letter-spacing:1px;text-transform:uppercase}
+.pvhead button{background:none;border:0;color:var(--dim);font-size:16px;padding:0 4px}
+section{background:#172127;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+section h3{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:1.4px;color:var(--gold);font-weight:600}
+button{background:#22303a;color:var(--text);border:1px solid #344650;border-radius:6px;padding:6px 10px;cursor:pointer;font:inherit}
+button:hover{border-color:#57707e}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1a0f06;font-weight:700;letter-spacing:.3px}
+button.danger{color:#ffb4b4}
+button:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap}
+.row label{color:var(--dim);min-width:86px}
+input[type=text],input[type=number]{background:#0d1418;color:var(--text);border:1px solid #344650;border-radius:6px;padding:5px 8px;font:inherit;width:100%}
+input[type=number]{width:110px}
+input[type=range]{flex:1;accent-color:var(--accent)}
+.seg{display:inline-flex;border:1px solid #344650;border-radius:6px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:5px 10px;background:#121a1f}
+.seg button.on{background:var(--teal);color:#06201f;font-weight:700}
+.area{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;border:1px solid transparent}
+.area:hover{background:#1e2a31}
+.area.on{border-color:var(--teal);background:#1d2a31}
+.sw{width:14px;height:14px;border-radius:3px;flex:none;border:1px solid #0006}
+.tg{position:relative;width:34px;height:18px;flex:none;border-radius:9px;background:#3a4750;border:1px solid #4c5d68;cursor:pointer;padding:0;transition:background .15s}
+.tg::after{content:'';position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#c9d3d8;transition:left .15s}
+.tg.on{background:var(--teal);border-color:var(--teal)}
+.tg.on::after{left:18px;background:#06201f}
+.tg:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.area.off .sw,.area.off .aname{opacity:.45}
+.area.off .aname{text-decoration:line-through}
+.area .aname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.area .meta{margin-left:auto;color:var(--dim);font-size:12px}
+#msg{margin-top:8px;font-size:13px;white-space:pre-wrap}
+#msg.ok{color:#8ee6a8} #msg.err{color:#ff9d9d}
+.hint{color:var(--dim);font-size:12px;margin:4px 0 0}
+.changes{max-height:220px;overflow:auto;font-size:12px;margin-top:6px}
+.changes div{display:flex;justify-content:space-between;border-bottom:1px solid #222d33;padding:2px 0}
+.small{font-size:12px}
+#tip{position:fixed;pointer-events:none;background:#0a0f12f0;border:1px solid var(--gold);padding:8px 10px;border-radius:6px;font-size:12px;max-width:300px;display:none;z-index:10;box-shadow:0 4px 18px #000a}
+#tip h4{margin:0 0 3px;font-size:13px;color:var(--gold)}
+.mk{cursor:pointer}
+.warnline{display:none;margin:2px 0 6px 22px;padding:6px 8px;border-left:3px solid #ff9d4d;background:#2a1d12;color:#ffcf9e;font-size:12px;border-radius:0 6px 6px 0}
+.warnline.on{display:block}
+#spot{position:fixed;z-index:15;display:none;width:270px;background:var(--panel-solid);border:1px solid var(--gold);border-radius:8px;padding:10px 12px;box-shadow:0 8px 28px #000c;font-size:13px}
+#spot h4{margin:0 0 4px;font-size:14px}#spot select{width:100%;margin:6px 0;padding:5px;background:#0d1418;color:var(--text);border:1px solid #344650;border-radius:5px}
+#spot .x{position:absolute;right:8px;top:6px;background:none;border:none;color:var(--dim);font-size:16px;cursor:pointer}
+#preview.on{display:block;font-size:12px}
+.pvrow{display:grid;grid-template-columns:20px 1fr 42px 42px;gap:4px;align-items:center;padding:1px 0}.pvrow img{width:18px;height:18px}
+.pvrow .n{text-align:right;font-variant-numeric:tabular-nums}.pvrow.big .nm{color:#ff9d9d}.pvh{color:var(--dim);font-size:11px}
+.hwrow{display:flex;align-items:center;gap:6px;font-size:12px;padding:2px 0}.hwrow span{flex:1}
+#gdbanner{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;width:min(440px,calc(100% - 32px));background:var(--panel-solid);border:1px solid var(--gold);border-radius:10px;padding:16px 18px;box-shadow:0 10px 30px #000c;display:none;text-align:center}
+#gdbanner.on{display:block}#gdtext{font-size:14px;margin-bottom:10px}#gdtext b{color:var(--gold)}
+#gdbar{height:8px;border-radius:4px;background:#22303a;overflow:hidden}#gdbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--accent));transition:width .2s}
+#gdbar.hide{display:none}#gdbtns{margin-top:10px;display:flex;gap:8px;justify-content:center}#gdbtns:empty{display:none}
+#modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:20}
+#modal.on{display:flex}
+#modal .box{width:min(460px,calc(100% - 32px));background:var(--panel-solid);border:1px solid #ff9d4d;border-radius:10px;padding:18px 20px;box-shadow:0 10px 40px #000c}
+#modal h2{margin:0 0 10px;font-size:16px;color:#ffb36b;display:flex;gap:8px;align-items:center}
+#modal p{margin:0 0 10px;color:var(--text)}
+#modal ul{margin:0 0 12px;padding-left:20px;color:var(--dim)}
+#modal .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.cauldron-label{pointer-events:none}
+.tgrid{display:grid;grid-template-columns:62px 1fr 44px 1fr 44px;gap:6px 6px;align-items:center;font-size:12px}
+.tgrid .th{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.tgrid input[type=range]{width:100%}
+.tgrid .v{text-align:right;font-variant-numeric:tabular-nums}
+.tgrid .v.up{color:#ff9d9d}.tgrid .v.down{color:#8ee6a8}
+.mgrp{font-size:11px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);margin:10px 0 4px}
+.mrow{display:flex;align-items:center;gap:6px;padding:3px 2px;border-radius:5px;font-size:13px}
+.mrow:hover{background:#1e2a31}
+.mrow img{width:22px;height:22px;flex:none}
+.mrow .mn{flex:1;min-width:0}
+.mrow .mc{font-size:11px;color:var(--dim);white-space:nowrap}
+.mrow .mn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow.banned img{opacity:.35}
+.mtough{display:grid;grid-template-columns:18px 1fr 38px 26px 1fr 38px;gap:2px 5px;align-items:center;margin:0 2px 6px 30px;font-size:11px;color:var(--dim)}
+.mtough input[type=range]{width:100%;height:14px;margin:0}
+.mtough .mv{text-align:right;font-variant-numeric:tabular-nums}
+.mtough .mv.up{color:#ff9d9d}.mtough .mv.down{color:#8ee6a8}
+.mrow.banned .mn{text-decoration:line-through;color:var(--dim)}
+#wholesec.on{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal) inset}
+#wbody{display:none}#wholesec.on #wbody{display:block}
+.pausenote{display:none;font-size:12px;color:#06201f;background:var(--teal);border-radius:5px;padding:3px 8px;margin-bottom:8px;font-weight:600}
+section.paused{opacity:.55}
+section.paused>*:not(.pausenote){pointer-events:none}
+section.paused .pausenote{display:block;opacity:1}
+.gfrow{display:flex;align-items:center;gap:8px}
+.gpath{flex:1;min-width:0;font-size:12px;color:var(--dim);overflow:hidden;white-space:nowrap}
+.pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;flex:none}
+.pill.ok{background:#173d2a;color:#8ee6a8}.pill.bad{background:#4a1d1d;color:#ffb4b4}
+#gedit{display:none;margin-top:6px}#gedit.on{display:block}
+#gmsg.ok{color:#8ee6a8}#gmsg.err{color:#ff9d9d}
+.rlabel{cursor:pointer}
+.rlabel:hover .pbg{stroke:#e8b34b;stroke-opacity:1;stroke-width:2.5;stroke-dasharray:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:12px;padding:4px 8px;border-radius:14px;background:#0d1418;border:1px dashed #57707e}
+.chip{cursor:pointer;color:var(--text)}
+.chip.used{border-style:solid;border-color:var(--teal);background:var(--teal);color:#06201f;font-weight:700}
+.chip.off{border-style:dashed;border-color:#57707e;color:var(--dim);text-decoration:line-through}
+.sub{color:var(--dim);font-size:12px;margin:8px 0 2px}
+details.help{margin:-2px 0 6px}details.help summary,details summary{cursor:pointer;color:var(--dim)}details summary:hover{color:var(--text)}
+section{padding:10px 12px}section h3{margin-bottom:6px}
+</style>
+</head>
+<body>
+<div id="view">
+  <div id="gdbanner" role="status" aria-live="polite"><div id="gdtext"></div><div id="gdbar"><i></i></div><div id="gdbtns"></div></div>
+  <div id="world">
+    <img class="map" id="mapimg" src="/img/worldmap.jpg" alt="World map">
+    <svg id="overlay"></svg>
+  </div>
+  <div class="vignette"></div>
+  <div id="topbar">
+    <span id="title">Enemy Randomizer</span>
+    <button class="tool on" id="tPan" title="Drag to move the map">✋ Move</button>
+    <button class="tool" id="tDraw" title="Drag to draw an area box (or hold Shift)">▭ Draw area</button>
+    <button class="tool" id="tFit">Fit map</button>
+    <button class="tool on" id="tRegions" title="Show or hide the ready-made region boxes">⬚ Regions</button>
+    <button class="tool" id="tHumans" title="Show or hide human enemies (bandits, Eclipse) on the map">👤 Humans</button>
+    <span class="findbox"><input id="find" list="findlist" placeholder="🔍 Find a machine…" autocomplete="off"><button id="findx" title="Clear">✕</button></span>
+    <datalist id="findlist"></datalist><span id="findcount" class="small" style="color:var(--text);text-shadow:0 1px 4px #000"></span>
+    <button class="tool" id="tIn">＋</button><button class="tool" id="tOut">－</button>
+    <span id="tophint" class="small" style="color:var(--dim);text-shadow:0 1px 4px #000;margin-left:6px">Scroll to zoom · drag to move · Shift+drag to draw an area</span>
+  </div>
+  <div id="legend">
+    <button id="legtg" title="Show or hide the map key">Key ▾</button>
+    <span><i style="border-color:var(--small)"></i>Small</span>
+    <span><i style="border-color:var(--medium)"></i>Medium</span>
+    <span><i style="border-color:var(--large)"></i>Large</span>
+    <span><i style="border-color:var(--flyer)"></i>Flyer</span>
+    <span><i style="border-color:var(--off)"></i>Never changed</span>
+    <span><i style="border-color:#9fb0b8;border-style:dashed"></i>Cauldron / story / Hunting Grounds (off unless ticked)</span>
+    <span><i style="border-color:#e8b34b;border-style:dotted"></i>Boss</span>
+    <span><i style="border-color:#e0894a;border-radius:2px;transform:rotate(45deg)"></i>Bandit <i style="border-color:#b06cff;border-radius:2px;transform:rotate(45deg);margin-left:6px"></i>Eclipse <i style="border-color:#5cc8f0;border-radius:2px;transform:rotate(45deg);margin-left:6px"></i>FW bandit (👤 Humans)</span>
+    <span><img src="/img/cauldron_2.png" width="14" height="14" style="vertical-align:-3px;margin-right:3px">Cauldron entrance</span>
+    <span id="legspoil" style="display:none"><i style="border-color:var(--gold);background:var(--gold)"></i>Changed by your last build</span>
+  </div>
+  
+</div>
+
+<aside id="left">
+  <section id="machsec" style="margin:0;border:0;background:none;padding:0">
+    <h3>Machines</h3>
+    <details class="help"><summary class="small">How this list works</summary><div class="hint" style="margin-top:4px">HP (health) and DMG (damage) under each machine (100% = normal) stack with the size-group sliders under Machine toughness. Rare / Normal / Common: how often a machine is picked when spots are swapped. Switch a machine off to keep it out of your game: every spot and herd member that would be that machine gets a different machine of a similar size instead, and nothing turns into it. The number is how many spots it has on the map. Click a machine on the map to pick what goes in that spot.</div></details>
+    <div class="row"><button id="mall">All on</button><span class="small" id="mcount" style="color:var(--dim)"></span></div>
+    <div id="mlist"></div>
+  </section>
+</aside>
+
+<aside id="right">
+  <div id="rhead">
+    <div class="rtitle">Enemy Randomizer <span id="rver"></span></div>
+    <button id="rgame" class="pill" title="Game folder - click to change">…</button>
+  </div>
+  <nav id="tabs" role="tablist">
+    <button role="tab" data-tab="world"><span>🗺 World</span><small id="bw"></small></button>
+    <button role="tab" data-tab="mach"><span>⚔ Machines</span><small id="bm"></small></button>
+    <button role="tab" data-tab="hum"><span>👤 Humans</span><small id="bh"></small></button>
+    <button role="tab" data-tab="setup"><span>⚙ Setup</span><small id="bs"></small></button>
+  </nav>
+  <div id="rbody">
+  <div class="tab" data-tab="world">
+  <section id="wholesec">
+    <h3>Whole map</h3>
+    <div class="row"><label style="min-width:0;color:var(--text);font-weight:600"><input type="checkbox" id="won"> 🌍 Randomize the whole map at once</label></div>
+    <div class="hint" style="margin-top:0">One setting for every machine on the map. Your areas are kept but paused while this is ticked.</div>
+    <div id="wbody">
+      <div class="row"><label>Mode</label>
+        <div class="seg" id="wmode"><button data-v="grouped">Grouped</button><button data-v="chaotic">Chaotic</button></div>
+      </div>
+      <div class="row"><label>Seed</label><input type="number" id="wseed"><button id="wdice" title="Random seed">🎲 New seed</button></div>
+      <div class="row"><label>Swap chance</label><input type="range" id="wchance" min="0" max="100" step="5"><span id="wchancev" class="small" style="width:38px;text-align:right"></span></div>
+      <div class="row"><label>Difficulty</label><input type="range" id="wdiff" min="-2" max="2" step="1"><span id="wdiffv" class="small" style="width:84px;text-align:right"></span></div>
+      <div class="row" title="Chance that a normal spot gets the corrupted version of its machine (Daemonic in The Cut)"><label>Corrupted</label><input type="range" id="wclass" min="0" max="100" step="5"><span id="wclassv" class="small" style="width:38px;text-align:right"></span></div>
+      <div class="row"><label style="min-width:0"><input type="checkbox" id="wherds"> Include roaming herds &amp; patrols (same mode and seed)</label></div>
+      <div class="hint">Corrupted / Daemonic: chance that a normal spot gets the corrupted version of its machine (the Daemonic version in The Cut). They may fight nearby normal machines. Cauldrons, story missions and Frozen Wilds machines follow the ticks on the Machines tab.</div>
+    </div>
+  </section>
+
+  <section class="pausable">
+    <div class="pausenote">Paused - "Randomize the whole map at once" is ticked.</div>
+    <h3>Areas</h3>
+    <div id="areas"></div>
+    <div class="row">
+      <button id="newarea">New area from box</button>
+      <button id="addbox">Add box to area</button>
+      <button id="clearbox">Clear box</button>
+    </div>
+    <div class="sub">Ready-made regions: click a name (here or on the map) to switch it on, click again to switch it off.</div>
+    <div class="chips" id="regionchips"></div>
+    <div class="hint" id="boxinfo">Draw a box on the map (▭ Draw area, or Shift+drag).</div>
+  </section>
+
+  <section class="pausable">
+    <h3 id="edtitle">Area settings</h3>
+    <div class="row"><label>Name</label><input type="text" id="aname"></div>
+    <div class="row"><label>Mode</label>
+      <div class="seg" id="amode"><button data-v="off">Off</button><button data-v="grouped">Grouped</button><button data-v="chaotic">Chaotic</button></div>
+    </div>
+    <div class="row"><label>Seed</label><input type="number" id="aseed"><button id="dice" title="Random seed">🎲 New seed</button></div>
+    <div class="row"><label>Swap chance</label><input type="range" id="achance" min="0" max="100" step="5"><span id="achancev" class="small" style="width:38px;text-align:right"></span></div>
+    <div class="row"><label>Difficulty</label><input type="range" id="adiff" min="-2" max="2" step="1"><span id="adiffv" class="small" style="width:84px;text-align:right"></span></div>
+    <div class="row" title="Chance that a normal spot gets the corrupted version of its machine (Daemonic in The Cut)"><label>Corrupted</label><input type="range" id="aclass" min="0" max="100" step="5"><span id="aclassv" class="small" style="width:38px;text-align:right"></span></div>
+    <div class="row" id="arearow"><button id="zoomarea">Show on map</button><button id="clearrects">Remove its boxes</button><button class="danger" id="delarea">Delete area</button></div>
+  </section>
+
+  <section class="pausable" id="herdsec">
+    <div class="pausenote">Mode and seed come from Whole map (herd size still applies).</div>
+    <h3>Roaming herds &amp; patrols</h3>
+    <div class="hint" style="margin:0 0 6px">Wandering herds and patrol groups are shared across the whole world, so they get one setting. Every herd member gets its own roll, so a herd can come out as a mix of machines. This also covers Shell-Walker convoys and random machine encounters (Glinthawk ambushes, alarmed Longlegs and the like).</div>
+    <div class="row"><label>Mode</label>
+      <div class="seg" id="hmode"><button data-v="off">Off</button><button data-v="grouped">Grouped</button><button data-v="chaotic">Chaotic</button></div>
+    </div>
+    <div class="row"><label>Seed</label><input type="number" id="hseed"><button id="hdice">🎲</button></div>
+    <div class="row" title="How many machines spawn in each roaming herd and patrol"><label>Herd size</label><input type="range" id="hsize" min="25" max="300" step="25"><span id="hsizev" class="small" style="width:84px;text-align:right"></span></div>
+    <div class="hint" id="hsizehint">Bigger or smaller roaming herds and patrols. When a bigger machine takes over a herd of smaller ones, its numbers are capped (at normal size: up to 6 medium, 1 large or 3 flyers).</div>
+    <div class="warnline" id="hsizewarn">Big herds mean many more machines at once - fights get much harder and the game may slow down. Try 150% before going higher.</div>
+  </section>
+  </div>
+
+  <div class="tab" data-tab="mach">
+  <section>
+    <h3>Which fights</h3>
+    <div class="hint" style="margin-top:0">Open-world spots are always included. These add riskier places - each asks first.</div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="ocauldron"> ⚠ Also randomize Cauldrons</label></div>
+    <div class="warnline" id="wcauldron">On: machines inside Cauldrons will be swapped. Some Cauldron fights are scripted (doors, lifts, the core override) and may not finish. Untick and rebuild if you get stuck.</div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="ostory"> ⚠ Also randomize story-mission fights</label></div>
+    <div class="warnline" id="wstory">On: story-mission machines will be swapped. A quest can stall if it waits for a specific machine to die or be overridden. Untick and rebuild if you get stuck.</div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="ohg"> ⚠ Also randomize Hunting Grounds</label></div>
+    <div class="warnline" id="whg">On: Hunting Ground machines will be swapped. Trials that ask for a particular machine (e.g. knock the horns off Lancehorns) may become impossible - finish the trials you care about first. Untick and rebuild to put them back.</div>
+  </section>
+
+  <section>
+    <h3>Bosses</h3>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="oboss"> ⚠ Randomize boss fights <span class="small" id="bosscount" style="color:var(--dim)"></span></label></div>
+    <div id="bossopts">
+      <div class="row"><label>Becomes</label><div class="seg" id="bmode"><button data-v="big" title="Another Large machine (Thunderjaw, Behemoth, Frostclaw...)">Big machine</button><button data-v="medium" title="Any Medium or Large machine">Medium+</button><button data-v="any" title="Anything at all - a Deathbringer could become a Grazer">Anything</button></div></div>
+      <div class="row"><label>Seed</label><input type="number" id="bseed"><button id="bdice">🎲</button></div>
+    </div>
+    <div class="hint">Deathbringers and Corruptors in main quests, the Sawtooth fight with Rost, the Frozen Wilds Frostclaws, the Fireclaw in Cauldron EPSILON and the Rockbreaker quest. Uses its own setting, not the areas.</div>
+    <div class="warnline" id="wboss">On: boss fights use other machines. A boss quest can stall if it waits for that exact machine (a gun to man, a part to shoot off). Make a manual save before each one; untick and rebuild if you get stuck.</div>
+  </section>
+
+  <section>
+    <h3>Extra machines</h3>
+    <div class="hint" style="margin-top:0">Machines normally kept out. Each joins the Large group when ticked.</div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="omole"> ⚠ Add the Rockbreaker to the Large group</label></div>
+    <div class="warnline" id="wmole">On: Rockbreakers can appear wherever Large machines can. Outside their quarries they may struggle to burrow.</div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="ohackbot"> ⚠ Add the Corruptor to the Large group</label></div>
+    <div class="warnline" id="whackbot">On: Corruptors can appear wherever Large machines can. They corrupt other machines nearby.</div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="owarrobot"> ⚠ Add the Deathbringer to the Large group <span class="small" style="color:var(--dim)">(experimental)</span></label></div>
+    <div class="warnline" id="wwarrobot">On (experimental): Deathbringers can appear wherever Large machines can. It's the main-quest Deathbringer - if one stands idle or acts oddly, untick and rebuild.</div>
+  </section>
+
+  <section>
+    <h3>Frozen Wilds &amp; flyers</h3>
+    <div class="hint" style="margin-top:0">Frozen Wilds machines (Scorcher, Frostclaw, Fireclaw) outside The Cut:</div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="ofwg"> ❄ Anywhere in Grouped areas &amp; herds</label></div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="ofwc"> ❄ Anywhere in Chaotic areas &amp; herds</label></div>
+    <div class="hint">Unticked, they only appear in The Cut.</div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="oflyer"> Chaotic: keep flyers separate</label></div>
+  </section>
+
+  <section id="toughsec">
+    <h3>Machine toughness</h3>
+    <div class="hint" style="margin:0 0 6px">Health and damage for each size group, on top of your game difficulty. 100% = normal. Works on every machine placed on the map, including Cauldrons, story fights and bosses. Roaming herds are not affected (the game spawns those a different way). Fine-tune single machines with the HP / DMG sliders in the Machines list on the left.</div>
+    <div class="tgrid" id="tgrid"></div>
+    <div class="row"><button id="treset" title="Also resets the per-machine sliders in the left list">Reset all to 100%</button><span class="small" id="tsum" style="color:var(--dim)"></span></div>
+  </section>
+
+  <section>
+    <h3>Spots picked by hand</h3>
+    <div class="row"><span class="small" id="pinsum" style="flex:1;color:var(--dim)"></span><button id="pinclear">Clear picked spots</button></div>
+  </section>
+  </div>
+
+  <div class="tab" data-tab="hum">
+  <section id="humansec">
+    <h3>Human enemies</h3>
+    <div class="hint" style="margin:0 0 6px">Bandits, Eclipse and Frozen Wilds bandits. One setting for the whole world (areas and Whole map don't change humans). Friendly people are never touched.</div>
+    <div class="row"><label>Mode</label>
+      <div class="seg" id="humode"><button data-v="off">Off</button><button data-v="mix" title="Types swap within their own faction - a camp always stays on one side">Same faction</button><button data-v="camps" title="Each encounter switches to another faction; archers stay archers, heavies stay heavies">Swap camps</button><button data-v="chaos" title="Any human type anywhere - factions get mixed and may fight each other">Chaos</button></div>
+    </div>
+    <div class="row"><label>Seed</label><input type="number" id="huseed"><button id="hudice">🎲</button></div>
+    <div class="hint" id="humodehint"></div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="hucamps"> ⚠ Also swap the faction of bandit camps</label></div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="hufw"> ❄ Frozen Wilds bandits can appear outside The Cut</label></div>
+    <div class="hint">Quest and Cauldron fights follow the ticks on the Machines tab.</div>
+  </section>
+
+
+  <section id="crosssec">
+    <h3>Humans ⇄ machines <span style="color:var(--dim);letter-spacing:0;text-transform:none;font-weight:400">(experimental)</span></h3>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="xon"> ⚠ Swap some machines and humans</label></div>
+    <div class="hint" style="margin-top:0">Some machine spots get a bandit or Eclipse fighter instead, and some human spots get a machine. Single spots only - herds, groups and bosses are never swapped. Quest, Cauldron and Hunting Ground spots only if those are ticked.</div>
+    <div id="xbody">
+      <div class="row" title="Share of machine spots that become a human enemy"><label>Machines → 👤</label><input type="range" id="xth" min="0" max="50" step="5"><span id="xthv" class="small" style="width:38px;text-align:right"></span></div>
+      <div class="row" title="Share of human spots that become a machine"><label>👤 → Machines</label><input type="range" id="xtm" min="0" max="50" step="5"><span id="xtmv" class="small" style="width:38px;text-align:right"></span></div>
+      <div class="row"><label>Seed</label><input type="number" id="xseed"><button id="xdice">🎲</button></div>
+      <div class="row"><label style="min-width:0"><input type="checkbox" id="xcamps"> Bandit camps can get machines too</label></div>
+      <div class="hint">Big machines become heavies; heavies become a Large machine only where there's room. In The Cut, machines become Frozen Wilds bandits. Uses your switched-off machines and Rare/Common weights.</div>
+    </div>
+    <div class="warnline" id="wcross">On (experimental): bandits at machine spots and machines at human spots may wander, stand idle or ignore you, since those places weren't built for them. Make a manual save; untick and rebuild if anything breaks.</div>
+  </section>
+
+  <section>
+    <h3>Human toughness</h3>
+    <div class="hint" style="margin:0 0 6px">Health and damage per faction, on top of your game difficulty. 100% = normal. Works even with the mode set to Off, and covers every human enemy of that faction (camps, quests, Cauldrons, Eclipse ambushes).</div>
+    <div class="tgrid" id="htgrid"></div>
+    <details id="htdet" style="margin-top:6px"><summary class="small" style="cursor:pointer">Fine-tune each type</summary>
+      <div class="hint" style="margin:4px 0 6px">Multiplies with the faction slider above.</div>
+      <div class="tgrid" id="htgrid2" style="grid-template-columns:96px 1fr 40px 1fr 40px"></div>
+    </details>
+    <details id="hwdet" style="margin-top:6px"><summary class="small" style="cursor:pointer">How often each type is picked</summary>
+      <div class="hint" style="margin:4px 0 6px">Rare / Normal / Common, like the machines. Only matters when humans are randomized.</div>
+      <div id="hwlist"></div>
+    </details>
+    <div class="row"><button id="htreset">Reset humans to 100%</button><span class="small" id="htsum" style="color:var(--dim)"></span></div>
+  </section>
+  </div>
+
+  <div class="tab" data-tab="setup">
+  <section id="gamebox">
+    <h3>Game folder</h3>
+    <div class="gfrow"><span class="pill" id="gpill">…</span><span class="gpath" id="gpath"></span><button id="gchange">Change</button></div>
+    <div id="gedit">
+      <div class="hint" id="ghint">Pick the Horizon Zero Dawn folder (or its Packed_DX12 folder). This is saved, and you can change it any time - handy when the game is on a different drive or PC.</div>
+      <div class="row"><button id="gbrowse">📁 Browse…</button><button id="gdetect">🔍 Find it for me</button></div>
+      <div class="row"><input type="text" id="gamepath" placeholder="e.g. D:\SteamLibrary\steamapps\common\Horizon Zero Dawn"><button id="setgame">Set</button></div>
+      <div id="gmsg" class="small"></div>
+    </div>
+    <div class="row"><button id="greload" title="Read the map, machines and icons from the game again - e.g. after a game update">🔄 Re-read game files</button><span class="small" id="gdstate" style="color:var(--dim)"></span></div>
+  </section>
+
+  <section>
+    <h3>Recent builds</h3>
+    <div class="hint" style="margin-top:0">Your last 10 installs. Restore one to get that exact layout back.</div>
+    <div class="hist" id="hist"></div>
+  </section>
+
+  <section>
+    <h3>Presets</h3>
+    <div class="hint" style="margin-top:0">Save your current setup under a name and switch back to it later. "Copy code" gives a short code you can send a friend; paste one below to load it.</div>
+    <div class="row"><input type="text" id="pname" placeholder="Name, e.g. Hard mode" style="flex:1;width:auto"><button id="psave">Save</button></div>
+    <div class="plist" id="plist"></div>
+    <div class="row"><input type="text" id="pcode" placeholder="Paste a code here" style="flex:1;width:auto"><button id="pload">Load code</button></div>
+    <div id="pmsg" class="small"></div>
+  </section>
+
+  <section>
+    <h3>Remove</h3>
+    <div class="row"><button id="uninstall">Uninstall</button><span class="small" style="color:var(--dim)">Takes the randomizer out of the game.</span></div>
+    <div class="hint" id="gamestatus"></div>
+  </section>
+  </div>
+  </div>
+
+  <div id="rfoot">
+    <div id="risky"></div>
+    <div class="row" style="margin:0"><button class="primary" id="build">Build &amp; install</button><button id="pvbtn" title="Count what this setup will put in the world, without installing anything">🔍 Preview</button><button id="surprise" title="Surprise me: random whole-map layout, built and installed in one click - spoilers stay hidden">🎲</button></div>
+    <div id="msg"></div>
+    <div class="row" id="spoilrow" style="display:none;margin:4px 0 0"><button id="spoilbtn" title="Shows what each machine became - spoilers!">👁 Show spoilers</button><span class="small" style="color:var(--dim)">Hidden so the swaps are a surprise.</span></div>
+    <div class="changes" id="changes" style="display:none"></div>
+  </div>
+</aside>
+<div id="preview" role="dialog" aria-label="Preview"></div>
+<div id="tip"></div>
+<div id="spot" role="dialog" aria-label="Choose the machine for this spot"><button class="x" id="spotx" aria-label="Close">×</button><h4 id="spott"></h4><div class="small" id="spotsub" style="color:var(--dim)"></div>
+  <select id="spotsel"></select><div class="small" id="spotnote" style="color:var(--dim)"></div></div>
+<div id="modal" role="dialog" aria-modal="true" aria-labelledby="mtitle">
+  <div class="box">
+    <h2 id="mtitle">⚠ Warning</h2>
+    <div id="mbody"></div>
+    <div class="btns"><button id="mcancel">Cancel</button><button class="primary" id="mok">Turn it on</button></div>
+  </div>
+</div>
+
+<script>
+const PALETTE=['#ff8a3d','#3fd0c9','#c77dff','#f2c14e','#5aa9ff','#ef5b5b','#5fd18a','#ff6fb1','#a3e635','#22d3ee'];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let showSpoilers=false; // what-became-what stays hidden unless asked for
+let D=null, C=null, M=null, current='rest', lastChanges=null, saveT=null, box=null, tool='pan';
+let view={s:0.4,x:0,y:0}, showRegions=true;
+const ICON=new Set(['antelope','beachlizard','bison','cargorhino','crab','direwolf','glider','goat','greywolf','harvester','horse','hyena','laserscout','longhorn','longleg','raptor','scout','spraybot','stalker','thunderhawk','mole','hackbot','warrobot','hellhound','cryobear','infernobear','spraybot_cryo']);
+const VARIANT={corrupted:' (corrupted)',dlc:' · Frozen Wilds',cc:' (Daemonic)'};
+const WARN={
+  cauldron:{title:'Randomize Cauldrons?',body:`<p>This swaps the machines that fight you <b>inside the Cauldrons</b> (SIGMA, RHO, XI, ZETA and EPSILON).</p>
+    <ul><li>Some Cauldron fights are scripted: doors, lifts and the core override may wait for a particular machine.</li>
+    <li>If one doesn't open, you could be stuck in that Cauldron until you untick this, rebuild and reload.</li>
+    <li>Make a manual save before you go in.</li></ul><p>Turn it on anyway?</p>`},
+  hcamps:{title:'Swap the faction of bandit camps?',body:`<p>Bandit camps are activities in the game: you clear them to earn a reward.</p>
+    <ul><li>If a camp is filled with Eclipse instead of bandits, the game might not count it as cleared.</li>
+    <li>Without this tick, bandit camps still get mixed bandit types - just not a different faction.</li>
+    <li>Make a manual save first; untick and rebuild if a camp won't complete.</li></ul><p>Turn it on anyway?</p>`},
+  hchaos:{title:'Chaos humans?',body:`<p>Any human type can appear anywhere, so bandits and Eclipse end up <b>in the same group</b>.</p>
+    <ul><li>Different factions may fight each other instead of you.</li><li>Quests that need a whole group killed might behave oddly.</li></ul><p>Use Chaos anyway?</p>`},
+  mole:{title:'Add the Rockbreaker?',body:`<p>This lets the <b>Rockbreaker</b> take over spots of Large machines (Thunderjaws, Behemoths, Frostclaws, Fireclaws) and it can turn up anywhere they can.</p>
+    <ul><li>In the normal game Rockbreakers only live in a few quarries where they can burrow. Elsewhere they may struggle to dig, get stuck, or behave oddly.</li>
+    <li>It is a tough fight - expect a surprise.</li>
+    <li>Untick and rebuild if it causes trouble.</li></ul><p>Turn it on anyway?</p>`},
+  hg:{title:'Randomize Hunting Grounds?',body:`<p>This swaps the machines at the <b>Hunting Grounds</b>, including the trial machines (and the Frozen Wilds Hunting Ground).</p>
+    <ul><li>Trials that need a particular machine - tie down a Glinthawk, shoot the horns off Lancehorns - may become <b>impossible</b> while this is on.</li>
+    <li>Trial medals you already earned are kept.</li>
+    <li>Finish the trials you care about first, or untick this and rebuild before doing them.</li></ul><p>Turn it on anyway?</p>`},
+  boss:{title:'Randomize boss fights?',body:`<p>This swaps the <b>boss machines</b>: Deathbringers and Corruptors in the main quest, Rost's Sawtooth, the Frozen Wilds Frostclaws, the Fireclaw in Cauldron EPSILON and the Rockbreaker quest.</p>
+    <ul><li>Some bosses are scripted - a mounted gun, a part to shoot off, a cutscene that grabs the machine. With a different machine the fight might not end and the quest can stall.</li>
+    <li>Quest loot from the original boss may not drop.</li>
+    <li><b>Make a manual save before each boss.</b> If you get stuck: untick this, Build &amp; install, then load that save.</li></ul><p>Turn it on anyway?</p>`},
+  hackbot:{title:'Add the Corruptor?',body:`<p>This lets the <b>Corruptor</b> take over spots of Large machines, anywhere they can appear.</p>
+    <ul><li>Corruptors corrupt nearby machines, so whole areas can turn hostile and corrupted.</li>
+    <li>In the normal game they only appear in a few story places.</li>
+    <li>Untick and rebuild if it causes trouble.</li></ul><p>Turn it on anyway?</p>`},
+  warrobot:{title:'Add the Deathbringer? (experimental)',body:`<p>This lets the <b>Deathbringer</b> take over spots of Large machines, anywhere they can appear - including roaming herds (at most one per herd).</p>
+    <ul><li>The game has no ordinary Deathbringer for the open world, so this uses the one from a main-quest boss fight. It may <b>stand idle, not notice you, or act oddly</b> away from its arena.</li>
+    <li>Its guns are very strong, and it can be hard to escape from.</li>
+    <li>Make a manual save first. Untick and rebuild if it misbehaves.</li></ul><p>Turn it on anyway?</p>`},
+  cross:{title:'Swap machines and humans? (experimental)',body:`<p>Some <b>machine spots get a human enemy</b> (bandits, Eclipse, Frozen Wilds bandits) and some <b>human spots get a machine</b>.</p>
+    <ul><li>Those places weren't built for them: people might wander off, stand idle or not notice you; machines in bandit areas may get stuck on buildings.</li>
+    <li>Bandit camps are left out unless you tick that too - a camp with a machine in it might not count as cleared.</li>
+    <li>Make a manual save first. Untick and rebuild if anything breaks.</li></ul><p>Turn it on anyway?</p>`},
+  story:{title:'Randomize story missions?',body:`<p>This swaps machines in <b>main and side quest fights</b>, including Frozen Wilds quests.</p>
+    <ul><li>A quest can stall if it waits for a specific machine to be killed, overridden or scanned.</li>
+    <li>Boss fights and cutscenes may look wrong, or the next objective may not appear.</li>
+    <li>Make a manual save first. If you get stuck, untick this, rebuild and reload.</li></ul><p>Turn it on anyway?</p>`}};
+
+// world metres <-> map pixels
+const W2P=(x,y)=>[(x/M.tile_m-M.xmin)*M.tile_px,(M.ymax+1-y/M.tile_m)*M.tile_px];
+const P2W=(px,py)=>[(px/M.tile_px+M.xmin)*M.tile_m,(M.ymax+1-py/M.tile_px)*M.tile_m];
+const mapW=()=>(M.xmax-M.xmin+1)*M.tile_px, mapH=()=>(M.ymax-M.ymin+1)*M.tile_px;
+
+function tierOf(m){ if(C.excluded.includes(m))return 'off';
+  for(const g of ['Small','Medium','Large','Flyer']) if((C.groups[g]||[]).includes(m)) return g.toLowerCase(); return 'off'; }
+const tierColor={small:'#5fd18a',medium:'#f2c14e',large:'#ef5b5b',flyer:'#5aa9ff',off:'#7d8a92'};
+function curArea(){ return current==='rest'?C.rest:C.areas[current]; }
+function inRect(s,r){ const x0=Math.min(r[0],r[2]),x1=Math.max(r[0],r[2]),y0=Math.min(r[1],r[3]),y1=Math.max(r[1],r[3]); return s.x>=x0&&s.x<=x1&&s.y>=y0&&s.y<=y1; }
+const W=()=>{ C.whole=C.whole||{}; const w=C.whole; if(!w.mode) Object.assign(w,{mode:'grouped',seed:1,chance:100,difficulty:0,herds:true}); return w; };
+const wholeOn=()=>!!(C.whole&&C.whole.on);
+const isBanned=m=>(C.banned||[]).includes(m);
+const wlv=m=>(C.weights&&C.weights[m])||2;
+let findM=null, showHumans=false;
+const FACOL={bandit:'#e0894a',eclipse:'#b06cff',fwbandit:'#5cc8f0'};
+const FACNAME={bandit:'Bandit',eclipse:'Eclipse',fwbandit:'Frozen Wilds bandit'};
+function renderMachines(){
+  const list=$('mlist'); list.innerHTML=''; const counts={};
+  D.sites.forEach(s=>{ if(s.cat!=='roaming') counts[s.machine]=(counts[s.machine]||0)+1; });
+  const groups=[...(C.group_order||['Small','Medium','Large','Flyer']).map(g=>[g,C.groups[g]||[]]),['Never randomized',C.excluded||[]]];
+  groups.forEach(([g,ms])=>{ ms=ms.filter(m=>counts[m]); if(!ms.length) return; const h=document.createElement('div'); h.className='mgrp'; h.textContent=g; list.appendChild(h);
+    [...ms].sort((a,b)=>D.names[a].localeCompare(D.names[b])).forEach(m=>{ const off=isBanned(m);
+      const r=document.createElement('div'); r.className='mrow'+(off?' banned':'');
+      r.innerHTML=`${ICON.has(m)?`<img src="/img/${m}.png" alt="" onerror="this.style.visibility='hidden'">`:'<span style="width:22px"></span>'}<span class="mn">${esc(D.names[m])}</span><span class="mc">${counts[m]?counts[m]:''}</span>${off?'':`<button class="wt ${wlv(m)===1?'r':wlv(m)===3?'c':''}" title="How often it is picked - click to change">${['','Rare','Normal','Common'][wlv(m)]}</button>`}<button class="tg${off?'':' on'}" role="switch" aria-checked="${!off}" aria-label="${esc(D.names[m])} on/off" title="${off?'Off - will be replaced':'On'}"></button>`;
+      const wb=r.querySelector('.wt'); if(wb) wb.onclick=()=>{ C.weights=C.weights||{}; const n=wlv(m)%3+1; if(n===2) delete C.weights[m]; else C.weights[m]=n; changed(); };
+      r.querySelector('.tg').onclick=()=>{ const b=new Set(C.banned||[]); off?b.delete(m):b.add(m); C.banned=[...b]; changed(); };
+      list.appendChild(r);
+      if(!off){ const T=C.toughness=C.toughness||{}; T.health_m=T.health_m||{}; T.damage_m=T.damage_m||{};
+        const tr=document.createElement('div'); tr.className='mtough';
+        [['health_m','HP','Health'],['damage_m','DMG','Damage']].forEach(([k,ic,lab])=>{
+          const v=T[k][m]||100; const i=document.createElement('span'); i.textContent=ic; i.title=lab;
+          const sl=document.createElement('input'); sl.type='range'; sl.min=25; sl.max=300; sl.step=25; sl.value=v; sl.setAttribute('aria-label',D.names[m]+' '+lab.toLowerCase());
+          const o=document.createElement('span'); o.className='mv'+(v===100?'':(v>100?' up':' down')); o.textContent=v+'%';
+          const eff=()=>{ const g=TGROUP(m); const gv=((T[k==='health_m'?'health':'damage']||{})[g])||100; return Math.round(gv*(T[k][m]||100)/100); };
+          o.title=lab+' for '+D.names[m]+': '+eff()+'% in total (with its size group)';
+          sl.oninput=()=>{ const n=+sl.value; if(n===100) delete T[k][m]; else T[k][m]=n; o.textContent=n+'%'; o.className='mv'+(n===100?'':(n>100?' up':' down')); o.title=lab+' for '+D.names[m]+': '+eff()+'% in total (with its size group)'; tsum(); saveOnly(); };
+          tr.appendChild(i); tr.appendChild(sl); tr.appendChild(o); });
+        list.appendChild(tr); }
+    }); });
+  const n=(C.banned||[]).length; $('mcount').textContent=n?n+' switched off':'All machines on';
+}
+const TG=['Small','Medium','Large','Flyer','Other'];
+function renderTough(){ const T=C.toughness=C.toughness||{}; T.health=T.health||{}; T.damage=T.damage||{};
+  const g=$('tgrid');
+  if(g.dataset.built){ g.querySelectorAll('input').forEach(r=>{ const v=T[r.dataset.k][r.dataset.g]||100; if(document.activeElement!==r) r.value=v; const o=r.nextSibling; o.textContent=v+'%'; o.className='v '+(v===100?'':(v>100?'up':'down')); }); tsum(); return; }
+  g.dataset.built=1; g.innerHTML='<span></span><span class="th">Health</span><span></span><span class="th">Damage</span><span></span>';
+  const cls=(v,good)=>v===100?'':((v>100)===good?'up':'down');
+  TG.forEach(gr=>{ const h=T.health[gr]||100, d=T.damage[gr]||100;
+    const lab=document.createElement('span'); lab.textContent=gr==='Other'?'Other*':gr; lab.title=gr==='Other'?'Machines in no size group (e.g. Corruptor, Deathbringer, Tallneck, Rockbreaker when not in Large)':''; g.appendChild(lab);
+    [['health',h,true],['damage',d,true]].forEach(([k,v,good])=>{
+      const r=document.createElement('input'); r.type='range'; r.min=25; r.max=300; r.step=25; r.value=v; r.setAttribute('aria-label',gr+' '+k); r.dataset.k=k; r.dataset.g=gr;
+      const o=document.createElement('span'); o.className='v '+cls(v,good); o.textContent=v+'%';
+      r.oninput=()=>{ const T=C.toughness; const n=+r.value; if(n===100) delete T[k][gr]; else T[k][gr]=n; changed(false); };
+      g.appendChild(r); g.appendChild(o); }); });
+  tsum(); }
+const HFAC=[['bandit','Bandits'],['eclipse','Eclipse'],['fwbandit','FW bandits']];
+function htGrid(el,rows,hk,dk,live){ const T=C.human_tough=C.human_tough||{}; [hk,dk].forEach(k=>T[k]=T[k]||{});
+  const show=(r,v)=>{ const o=r.nextSibling; o.textContent=v+'%'; o.className='v '+(v===100?'':(v>100?'up':'down')); };
+  if(el.dataset.built){ el.querySelectorAll('input').forEach(r=>{ const v=(T[r.dataset.k]||{})[r.dataset.g]||100; if(document.activeElement!==r) r.value=v; show(r,v); }); return; }
+  el.dataset.built=1; el.innerHTML='<span></span><span class="th">Health</span><span></span><span class="th">Damage</span><span></span>';
+  rows.forEach(([key,name,tip])=>{ const lab=document.createElement('span'); lab.textContent=name; if(tip) lab.title=tip; el.appendChild(lab);
+    [hk,dk].forEach(k=>{ const r=document.createElement('input'); r.type='range'; r.min=25; r.max=300; r.step=25; r.dataset.k=k; r.dataset.g=key; r.setAttribute('aria-label',name+' '+(k===hk?'health':'damage'));
+      const v=(T[k]||{})[key]||100; r.value=v; const o=document.createElement('span'); el.appendChild(r); el.appendChild(o); show(r,v);
+      r.oninput=()=>{ const T=C.human_tough=C.human_tough||{}; T[k]=T[k]||{}; const n=+r.value; if(n===100) delete T[k][key]; else T[k][key]=n; show(r,n); htsum(); saveOnly(); }; }); }); }
+function renderHumanTough(){ htGrid($('htgrid'),HFAC,'health','damage');
+  const FN={bandit:'Bandit',eclipse:'Eclipse',fwbandit:'FW'}; const order=['bandit','eclipse','fwbandit'];
+  const types=Object.keys(D.htypes||{}).sort((a,b)=>order.indexOf(D.htypes[a].faction)-order.indexOf(D.htypes[b].faction)||D.htypes[a].name.localeCompare(D.htypes[b].name));
+  htGrid($('htgrid2'),types.map(t=>[t,D.htypes[t].name.replace(/^Frozen Wilds /,'FW '),D.htypes[t].name+' ('+FN[D.htypes[t].faction]+')']),'health_m','damage_m'); htsum(); }
+function renderHWeights(){ const el=$('hwlist'); const W=C.hweights||{}; const lv=t=>W[t]||2; el.innerHTML='';
+  const order=['bandit','eclipse','fwbandit'];
+  Object.keys(D.htypes).sort((a,b)=>order.indexOf(D.htypes[a].faction)-order.indexOf(D.htypes[b].faction)||D.htypes[a].name.localeCompare(D.htypes[b].name)).forEach(t=>{
+    const r=document.createElement('div'); r.className='hwrow'; const l=lv(t);
+    r.innerHTML=`<span>${esc(D.htypes[t].name)}</span><button class="wt ${l===1?'r':l===3?'c':''}" title="How often it is picked - click to change">${['','Rare','Normal','Common'][l]}</button>`;
+    r.querySelector('button').onclick=()=>{ C.hweights=C.hweights||{}; const n=lv(t)%3+1; if(n===2) delete C.hweights[t]; else C.hweights[t]=n; saveOnly(); renderHWeights(); };
+    el.appendChild(r); }); }
+// ---------- spots picked by hand ----------
+function pinOf(s){ return (C.pins||{})[s.id]; }
+function renderPins(){ const n=Object.keys(C.pins||{}).length; $('pinsum').textContent=n?`📌 ${n} spot${n>1?'s':''} picked by hand (click a marker to change)`:'Tip: click a machine on the map to pick what goes there.'; $('pinclear').style.display=n?'':'none'; }
+let spotId=null;
+function openSpot(id,x,y){ const s=D.sites[id]; if(!s||s.cat==='roaming') return; spotId=id; $('tip').style.display='none';
+  $('spott').textContent=D.names[s.machine]+(VARIANT[s.variant]||''); $('spotsub').textContent=(CATNAME[s.cat]||s.cat)+' · '+s.scene.replace(/_/g,' ');
+  const sel=$('spotsel'); const cur=pinOf(s)||''; let h=`<option value="">🎲 Randomize as normal</option><option value="keep">🔒 Keep it as it is</option>`;
+  const groups=[...(C.group_order||['Small','Medium','Large','Flyer']).map(g=>[g,C.groups[g]||[]]),['Other',['hackbot','warrobot','mole'].filter(m=>!Object.values(C.groups).flat().includes(m))]];
+  groups.forEach(([g,ms])=>{ const ok=ms.filter(m=>D.std[m]); if(!ok.length) return; h+=`<optgroup label="${g}">`+ok.slice().sort((a,b)=>D.names[a].localeCompare(D.names[b])).map(m=>`<option value="${m}">📌 ${esc(D.names[m])}</option>`).join('')+'</optgroup>'; });
+  sel.innerHTML=h; sel.value=cur; spotNote();
+  const el=$('spot'); el.style.display='block'; const W=window.innerWidth,H=window.innerHeight; el.style.left=Math.min(x+12,W-290)+'px'; el.style.top=Math.min(y+12,H-190)+'px'; sel.focus(); }
+function spotNote(){ const s=D.sites[spotId], v=$('spotsel').value; let t='';
+  if(v==='keep') t='This spot will never change, whatever the other settings say.';
+  else if(v) t=(s.variant==='corrupted'&&!(D.std[v]||{}).corrupted?'No corrupted version exists, so the normal one goes here. ':'')+'Placed here even if this kind of spot is not ticked. Not checked for room - a big machine in a tight spot can get stuck.';
+  else t='Follows your areas and ticks like any other spot.';
+  $('spotnote').textContent=t; }
+$('spotsel').onchange=()=>{ const v=$('spotsel').value; C.pins=C.pins||{}; if(v) C.pins[spotId]=v; else delete C.pins[spotId]; spotNote(); changed(); };
+$('spotx').onclick=()=>{ $('spot').style.display='none'; };
+window.addEventListener('keydown',e=>{ if(e.key==='Escape') $('spot').style.display='none'; });
+$('pinclear').onclick=()=>{ C.pins={}; $('spot').style.display='none'; changed(); };
+// ---------- preview ----------
+function pvSet(html){ const el=$('preview'); el.className='on'; el.innerHTML='<div class="pvhead"><b>Preview</b><button id="pvx" aria-label="Close">×</button></div>'+html; $('pvx').onclick=()=>{ el.className=''; }; }
+$('pvbtn').onclick=async()=>{ const el=$('preview'); pvSet('<span class="small">Counting…</span>');
+  try{ const r=await (await fetch('/api/preview',{method:'POST',body:JSON.stringify(C)})).json();
+    if(!r.ok){ pvSet(`<span class="small" style="color:#ff9d9d">${esc(r.message||'Preview failed')}</span>`); return; }
+    const all=new Set([...Object.keys(r.spots),...Object.keys(r.herds||{})]); const tot=m=>(r.spots[m]||0)+((r.herds||{})[m]||0);
+    const rows=[...all].filter(m=>tot(m)>0).sort((a,b)=>tot(b)-tot(a));
+    const hsum=Object.values(r.herds||{}).reduce((a,b)=>a+b,0);
+    const big=rows.filter(m=>tierOf(m)==='large'||TGROUP(m)==='Large').reduce((a,m)=>a+tot(m),0), all2=rows.reduce((a,m)=>a+tot(m),0);
+    let h=`<div class="small" style="margin-bottom:4px">${r.changed} of ${r.total_spots} spots change${r.humans?`, ${r.humans} humans change`:''}${r.to_humans||r.to_machines?` (⇄ ${r.to_humans} machines become humans, ${r.to_machines} humans become machines)`:''}. Herds hold ${hsum} machines. <b style="color:${big/all2>0.3?'#ff9d9d':'inherit'}">${Math.round(100*big/all2)}% Large</b>.</div>`;
+    h+=`<div class="pvrow pvh"><span></span><span>Machine</span><span class="n">Spots</span><span class="n">Herds</span></div>`;
+    rows.forEach(m=>{ h+=`<div class="pvrow${TGROUP(m)==='Large'?' big':''}">${ICON.has(m)?`<img src="/img/${m}.png" alt="" onerror="this.style.visibility='hidden'">`:'<span></span>'}<span class="nm">${esc(D.names[m]||m)}</span><span class="n">${r.spots[m]||''}</span><span class="n">${(r.herds||{})[m]||''}</span></div>`; });
+    h+=`<div class="small" style="color:var(--dim);margin-top:4px">Counts machines, not exact positions. Group spots and herds can spawn a few more or fewer in game.</div>`;
+    pvSet(h); }catch(e){ pvSet('<span class="small" style="color:#ff9d9d">Preview failed.</span>'); } };
+function htsum(){ const T=C.human_tough||{}; const n=['health','damage','health_m','damage_m'].reduce((a,k)=>a+Object.keys(T[k]||{}).length,0); $('htsum').textContent=n?n+' setting'+(n>1?'s':'')+' changed':'All normal'; renderBadges(); }
+function tsum(){ const T=C.toughness||{}; const n=Object.keys(T.health||{}).length+Object.keys(T.damage||{}).length+Object.keys(T.health_m||{}).length+Object.keys(T.damage_m||{}).length; $('tsum').textContent=n?n+' setting'+(n>1?'s':'')+' changed':'All normal'; }
+function renderHistory(){ const h=C.history||[]; const el=$('hist');
+  el.innerHTML=h.length?'':'<span class="small" style="color:var(--dim)">None yet - builds appear here.</span>';
+  h.forEach((e,i)=>{ const d=document.createElement('div');
+    d.innerHTML=`<span class="ht"><b>${esc(e.time)}</b> <span>· ${esc(e.summary)} · ${e.changes} changed</span></span><button>Restore</button>`;
+    d.querySelector('button').onclick=()=>{ applySetup(e.config); msg('Restored the setup from '+e.time+'. Press Build & install to put that layout back in the game (same seed = same layout).','ok'); };
+    el.appendChild(d); }); }
+const SNAPKEYS=k=>!['presets','history','game_path'].includes(k);
+function snapshot(){ const o={}; Object.keys(C).filter(SNAPKEYS).forEach(k=>o[k]=C[k]); return JSON.parse(JSON.stringify(o)); }
+function applySetup(cfg){ Object.keys(C).filter(SNAPKEYS).forEach(k=>delete C[k]); Object.assign(C,JSON.parse(JSON.stringify(cfg))); delete C.game_path;
+  C.areas=(C.areas||[]).map(a=>({...a,rects:a.rects||[]})); current='rest'; changed(); }
+function renderPresets(){ const el=$('plist'); el.innerHTML=''; const ps=C.presets||{};
+  Object.keys(ps).sort().forEach(n=>{ const d=document.createElement('div');
+    d.innerHTML=`<span class="pn" title="${esc(n)}">${esc(n)}</span><button data-a="load">Load</button><button data-a="code">Copy code</button><button data-a="del" class="danger" title="Delete">✕</button>`;
+    d.querySelector('[data-a=load]').onclick=()=>{ applySetup(ps[n]); pmsg('Loaded "'+n+'".','ok'); };
+    d.querySelector('[data-a=code]').onclick=async()=>{ const code=await encodeSetup(ps[n]); try{ await navigator.clipboard.writeText(code); pmsg('Code for "'+n+'" copied - paste it anywhere.','ok'); }catch(e){ $('pcode').value=code; pmsg('Copy the code from the box below.','ok'); } };
+    d.querySelector('[data-a=del]').onclick=()=>{ delete C.presets[n]; changed(false); };
+    el.appendChild(d); }); }
+function pmsg(t,c){ $('pmsg').textContent=t; $('pmsg').className='small '+(c==='ok'?'':'')+(c==='err'?' err':''); $('pmsg').style.color=c==='err'?'#ff9d9d':'#8ee6a8'; }
+const b64u=b=>btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+const ub64u=s=>Uint8Array.from(atob(s.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));
+async function encodeSetup(cfg){ const raw=new TextEncoder().encode(JSON.stringify(cfg));
+  const z=new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());
+  let bin=''; z.forEach(x=>bin+=String.fromCharCode(x)); return 'HZD1-'+btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+async function decodeSetup(code){ code=code.trim(); if(!code.startsWith('HZD1-')) throw new Error('not a code');
+  const z=ub64u(code.slice(5)); const txt=await new Response(new Blob([z]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text(); return JSON.parse(txt); }
+function areaIndexOf(s){ for(let i=C.areas.length-1;i>=0;i--) if(!C.areas[i].disabled&&(C.areas[i].rects||[]).some(r=>inRect(s,r))) return i; return -1; }
+
+async function load(){
+  D=await (await fetch('/api/data')).json(); C=D.config; M=D.map;
+  C.areas=(C.areas||[]).map(a=>({...a,rects:a.rects||[]}));
+  gameUI(D.game_valid, C.game_path);
+  const img=$('mapimg'); img.width=mapW(); img.height=mapH();
+  const svg=$('overlay'); svg.setAttribute('width',mapW()); svg.setAttribute('height',mapH());
+  $('findlist').innerHTML=[...new Set(D.sites.map(s=>s.machine))].map(m=>D.names[m]).sort().map(n=>`<option value="${esc(n)}">`).join('');
+  $('rver').textContent='v'+D.version; setTab(curTab);
+  fit(); draw(); renderPanel(); setStatus(); gameDataUI(D.gamedata);
+}
+// ---------- game data (read from the player's own game files) ----------
+let gdTimer=null, gdWasReady=null;
+function gameDataUI(st){ const b=$('gdbanner'), t=$('gdtext'), bar=$('gdbar'), btns=$('gdbtns'); btns.innerHTML='';
+  if(gdWasReady===null) gdWasReady=!!st.ready;
+  if(st.ready){ b.classList.remove('on'); $('gdstate').textContent='Map and machines read from your game.';
+    if(!gdWasReady){ gdWasReady=true; location.reload(); } return; }
+  gdWasReady=false; b.classList.add('on'); $('build').disabled=true; $('pvbtn').disabled=true;
+  if(st.loading){ const pct=st.total?Math.round(100*st.done/st.total):0;
+    t.innerHTML=`<b>Reading your game files…</b><br><span class="small">${esc(st.stage||'')} - ${pct}%. Only needed the first time.</span>`; bar.classList.remove('hide'); bar.firstChild.style.width=pct+'%';
+    $('gdstate').textContent='Reading…'; clearTimeout(gdTimer); gdTimer=setTimeout(pollGameData,400); return; }
+  bar.classList.add('hide');
+  if(st.error){ t.innerHTML=`<b>Couldn't read the game files</b><br><span class="small">${esc(st.error)}</span>`; $('gdstate').textContent='Not loaded.';
+    const r=document.createElement('button'); r.textContent='Try again'; r.onclick=reloadGameData; btns.appendChild(r); }
+  else t.innerHTML='<b>Choose your game folder</b><br><span class="small">The map and machines are read from your own copy of Horizon Zero Dawn - nothing from the game is included in this program.</span>';
+  const g=document.createElement('button'); g.textContent='Game folder…'; g.className='primary'; g.onclick=()=>$('rgame').onclick(); btns.appendChild(g); }
+async function pollGameData(){ try{ gameDataUI(await (await fetch('/api/gamestatus')).json()); }catch(e){ clearTimeout(gdTimer); gdTimer=setTimeout(pollGameData,1500); } }
+async function reloadGameData(){ const r=await (await fetch('/api/reload',{method:'POST'})).json(); if(!r.ok){ msg(r.message,'err'); return; } gdWasReady=false; setTimeout(pollGameData,200); }
+$('greload').onclick=()=>{ $('gdbanner').classList.add('on'); reloadGameData(); };
+function setStatus(){ $('gamestatus').textContent=D.game_valid?(D.installed?'Map randomizer is installed in this game folder.':'Map randomizer is not installed.'):'Set the game folder (Setup tab) before installing.'; }
+function gameUI(valid,path,keepOpen){ D.game_valid=!!valid; C.game_path=path||'';
+  $('gpill').textContent=valid?'Found':(path?'Not found':'Not set'); $('gpill').className='pill '+(valid?'ok':'bad');
+  $('rgame').textContent=valid?'✓ Game found':'⚠ Set game folder'; $('rgame').className='pill '+(valid?'ok':'bad'); if(typeof renderBadges==='function') renderBadges();
+  $('gpath').textContent=path?(path.length>44?'…'+path.slice(-43):path):'No game folder chosen yet'; $('gpath').title=path||'';
+  $('gamepath').value=path||''; $('gedit').classList.toggle('on',!valid||!!keepOpen); $('gchange').textContent=$('gedit').classList.contains('on')?'Close':'Change';
+  if(!valid&&path) gmsg('This saved folder isn\'t on this PC (or the game moved). Choose where the game is now.','err');
+  setStatus(); }
+function gmsg(t,c){ $('gmsg').textContent=t; $('gmsg').className='small '+(c||''); }
+async function gameCall(url,body){ gmsg('…');
+  try{ const r=await (await fetch(url,{method:'POST',body:JSON.stringify(body||{})})).json();
+    if(r.ok){ D.installed=r.installed; gameUI(true,r.path); gmsg(''); msg(r.message,'ok'); setTimeout(pollGameData,300); }
+    else if(!r.cancelled) gmsg(r.message,'err'); else gmsg('');
+  }catch(e){ gmsg('Lost contact with the randomizer window - is it still open?','err'); } }
+
+// ---------- view (zoom / pan) ----------
+function applyView(){ $('world').style.transform=`translate(${view.x}px,${view.y}px) scale(${view.s})`; drawMarkersScale(); }
+function fit(){ const v=$('view').getBoundingClientRect(); const s=Math.min(v.width/mapW(),v.height/mapH())*0.98;
+  view={s,x:(v.width-mapW()*s)/2,y:(v.height-mapH()*s)/2}; applyView(); }
+function zoomAt(f,cx,cy){ const ns=Math.max(0.15,Math.min(4,view.s*f)); const k=ns/view.s; view.x=cx-(cx-view.x)*k; view.y=cy-(cy-view.y)*k; view.s=ns; applyView(); }
+function screenToMap(e){ const r=$('view').getBoundingClientRect(); return [(e.clientX-r.left-view.x)/view.s,(e.clientY-r.top-view.y)/view.s]; }
+
+// ---------- drawing ----------
+const NS='http://www.w3.org/2000/svg';
+const mk=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e};
+function draw(){
+  const svg=$('overlay'); svg.innerHTML=''; const rlabels=[];
+  // ready-made region boxes (the dashed outline hides once the region is an area; its name pill stays)
+  if(wholeOn()){ const pad=6; svg.appendChild(mk('rect',{x:pad,y:pad,width:mapW()-2*pad,height:mapH()-2*pad,fill:'#3fd0c9','fill-opacity':0.05,stroke:'#3fd0c9','stroke-width':3,'stroke-dasharray':'14 8','vector-effect':'non-scaling-stroke'}));
+    const w=W(); rlabels.push(namePill([mapW()/2,mapH()*0.11],'🌍 Whole map · '+(w.mode==='chaotic'?'Chaotic':'Grouped')+' · seed '+w.seed,'on','#3fd0c9',()=>{},'Whole-map setting is on (see the panel)')); }
+  if(showRegions&&!wholeOn()) (D.regions||[]).forEach((rg,i)=>{ const ai=regionArea(rg); if(ai>=0) return; const r=rg.rect;
+    const [x0,y0]=W2P(r[0],r[3]), [x1,y1]=W2P(r[2],r[1]);
+    svg.appendChild(mk('rect',{x:x0,y:y0,width:x1-x0,height:y1-y0,fill:'none',stroke:'#e9eef0','stroke-opacity':0.55,'stroke-width':1.6,'stroke-dasharray':'10 7','vector-effect':'non-scaling-stroke'}));
+    rlabels.push(namePill(regionLabelPos(rg),'＋ '+rg.name,'new',null,()=>toggleRegion(i),'Click to make this region an area (on)'));
+  });
+  // area boxes
+  if(!wholeOn()) C.areas.forEach((a,i)=>(a.rects||[]).forEach(r=>{
+    const [x0,y0]=W2P(Math.min(r[0],r[2]),Math.max(r[1],r[3])), [x1,y1]=W2P(Math.max(r[0],r[2]),Math.min(r[1],r[3]));
+    const off=!!a.disabled;
+    svg.appendChild(mk('rect',{x:x0,y:y0,width:x1-x0,height:y1-y0,fill:a.color,'fill-opacity':off?0.03:(current===i?0.22:0.13),stroke:a.color,'stroke-opacity':off?0.55:1,'stroke-dasharray':off?'6 6':'','stroke-width':current===i?4:2.5,'vector-effect':'non-scaling-stroke','class':'abox'}));
+  }));
+  // one clickable name per area: click = on / off
+  if(!wholeOn()) C.areas.forEach((a,i)=>{ if(!(a.rects||[]).length) return; const off=!!a.disabled;
+    const rg=a.region&&(D.regions||[]).find(x=>x.name===a.region);
+    let pos; if(rg) pos=regionLabelPos(rg); else { const r=a.rects[0]; const [x0,y0]=W2P(Math.min(r[0],r[2]),Math.max(r[1],r[3])); pos=[x0,y0]; }
+    rlabels.push(namePill(pos,(off?'○ ':'● ')+a.name+(off?'  (off)':''),off?'off':'on',a.color,()=>toggleArea(i),off?'Off - click to turn this area on':'On - click to turn this area off',!rg));
+  });
+  if(box){ const r=box; const [x0,y0]=W2P(Math.min(r[0],r[2]),Math.max(r[1],r[3])), [x1,y1]=W2P(Math.max(r[0],r[2]),Math.min(r[1],r[3]));
+    svg.appendChild(mk('rect',{x:x0,y:y0,width:x1-x0,height:y1-y0,fill:'#fff','fill-opacity':0.08,stroke:'#fff','stroke-width':2,'stroke-dasharray':'8 6','vector-effect':'non-scaling-stroke'})); }
+  // markers
+  const changed={}; if(lastChanges&&showSpoilers) lastChanges.forEach(c=>{ if(!c.human) changed[c.id]=c.to; });
+  const g=mk('g',{id:'markers'}); svg.appendChild(g);
+  D.sites.forEach(s=>{ if(s.cat==='roaming') return;
+    const pin=pinOf(s), [px,py]=W2P(s.x,s.y), m=changed[s.id]||(pin&&pin!=='keep'?pin:s.machine), tr=tierOf(m);
+    const hollow=siteOff(s)&&!pin;
+    const node=mk('g',{class:'mk','data-id':s.id,transform:`translate(${px},${py})`});
+    const inner=mk('g',{class:'mki'});
+    if(s.cat==='boss') inner.appendChild(mk('circle',{r:17,fill:'none',stroke:'#e8b34b','stroke-width':2,'stroke-dasharray':'2 3',opacity:hollow?0.5:1}));
+    inner.appendChild(mk('circle',{r:13,fill:'#0b1014','fill-opacity':hollow?0.55:0.88,stroke:changed[s.id]?'#e8b34b':tierColor[tr],'stroke-width':changed[s.id]?3.2:2.2,'stroke-dasharray':hollow?'4 3':''}));
+    if(D.htypes[m]){ const fc=FACOL[D.htypes[m].faction]; inner.appendChild(mk('circle',{cx:0,cy:-4,r:3.5,fill:fc})); inner.appendChild(mk('path',{d:'M-6 7 Q0 -2 6 7 Z',fill:fc})); }
+    else if(ICON.has(m)) inner.appendChild(mk('image',{href:'/img/'+m+'.png',x:-10,y:-10,width:20,height:20,opacity:hollow?0.55:1}));
+    else inner.appendChild(mk('circle',{r:4,fill:tierColor[tr]}));
+    if(isBanned(m)&&!hollow&&!changed[s.id]) inner.appendChild(mk('line',{x1:-10,y1:10,x2:10,y2:-10,stroke:'#ff5d5d','stroke-width':3,'stroke-linecap':'round'}));
+    if(findM){ const hit=s.machine===findM||changed[s.id]===findM; if(hit){ inner.appendChild(mk('circle',{r:18,fill:'none',stroke:'#fff','stroke-width':2.5})); } else node.setAttribute('opacity',0.15); }
+    if(pin){ inner.appendChild(mk('circle',{cx:10,cy:-10,r:6,fill:pin==='keep'?'#9fb0b8':'#e8b34b',stroke:'#0b1014','stroke-width':1.5})); }
+    node.appendChild(inner); g.appendChild(node);
+  });
+  // human enemies
+  if(showHumans){ const hchanged={}; if(lastChanges&&showSpoilers) lastChanges.filter(c=>c.human).forEach(c=>hchanged[c.id]=c.to);
+    const hg=mk('g',{id:'hmarkers'}); svg.appendChild(hg);
+    (D.humans||[]).forEach(h=>{ if(h.cat==='roaming') return; const [px,py]=W2P(h.x,h.y), t0=hchanged[h.id]||h.htype, asM=!D.htypes[t0], t=asM?h.htype:t0, f=D.htypes[t].faction;
+      if(asM){ const node=mk('g',{class:'mk hum','data-hid':h.id,transform:`translate(${px},${py})`}); const inner=mk('g',{class:'mki'});
+        inner.appendChild(mk('rect',{x:-11,y:-11,width:22,height:22,rx:5,transform:'rotate(45)',fill:'#0b1014','fill-opacity':0.9,stroke:'#e8b34b','stroke-width':3}));
+        if(ICON.has(t0)) inner.appendChild(mk('image',{href:'/img/'+t0+'.png',x:-9,y:-9,width:18,height:18})); else inner.appendChild(mk('circle',{r:4,fill:'#e8b34b'}));
+        node.appendChild(inner); hg.appendChild(node); return; }
+      const hollow=(h.cat==='cauldron'&&!C.include_cauldrons)||(h.cat==='story'&&!C.include_story);
+      const node=mk('g',{class:'mk hum','data-hid':h.id,transform:`translate(${px},${py})`}); const inner=mk('g',{class:'mki'});
+      inner.appendChild(mk('rect',{x:-9,y:-9,width:18,height:18,rx:4,transform:'rotate(45)',fill:'#0b1014','fill-opacity':hollow?0.5:0.9,stroke:hchanged[h.id]?'#e8b34b':FACOL[f],'stroke-width':hchanged[h.id]?3:2,'stroke-dasharray':hollow?'3 3':''}));
+      inner.appendChild(mk('circle',{cx:0,cy:-4,r:3,fill:FACOL[f],opacity:hollow?0.5:1}));
+      inner.appendChild(mk('path',{d:'M-5 6 Q0 -2 5 6 Z',fill:FACOL[f],opacity:hollow?0.5:1}));
+      if(findM&&findM!=='') node.setAttribute('opacity',0.15);
+      node.appendChild(inner); hg.appendChild(node); }); }
+  // cauldron entrances
+  (D.cauldrons||[]).forEach((c,i)=>{
+    const [px,py]=W2P(c.x,c.y);
+    const node=mk('g',{class:'mk cauldron','data-cauldron':i,transform:`translate(${px},${py})`});
+    const inner=mk('g',{class:'mki'});
+    inner.appendChild(mk('circle',{r:17,fill:'#061417','fill-opacity':0.92,stroke:C.include_cauldrons?'#e8b34b':'#3fd0c9','stroke-width':2.4}));
+    inner.appendChild(mk('image',{href:'/img/'+(c.icon||'cauldron_2')+'.png',x:-14,y:-14,width:28,height:28}));
+    const t=mk('text',{y:33,'text-anchor':'middle',fill:'#bff4ef','font-size':12,'font-weight':700,'letter-spacing':1.5,'paint-order':'stroke',stroke:'#000','stroke-width':3.5,'class':'cauldron-label'}); t.textContent=c.name;
+    inner.appendChild(t); node.appendChild(inner); g.appendChild(node);
+  });
+  rlabels.forEach(l=>svg.appendChild(l));   // region labels on top so they can always be clicked
+  drawMarkersScale();
+}
+function drawMarkersScale(){ const r=8+5*Math.min(1,view.s); const k=r/(13*view.s); document.querySelectorAll('.mki').forEach(n=>n.setAttribute('transform',`scale(${k})`));
+  document.querySelectorAll('.rli').forEach(n=>n.setAttribute('transform',`scale(${1/view.s})`));
+  document.querySelectorAll('.alabel').forEach(n=>n.setAttribute('font-size',Math.max(14,16/view.s))); }
+
+// ---------- mouse ----------
+let drag=null;
+$('view').addEventListener('wheel',e=>{ e.preventDefault(); const r=$('view').getBoundingClientRect(); zoomAt(e.deltaY<0?1.15:1/1.15,e.clientX-r.left,e.clientY-r.top); },{passive:false});
+$('view').addEventListener('mousedown',e=>{
+  if(e.button!==0)return;
+  const drawing=tool==='draw'||e.shiftKey;
+  if(drawing){ const [px,py]=screenToMap(e); const [wx,wy]=P2W(px,py); drag={mode:'draw',start:[wx,wy]}; box=[wx,wy,wx,wy]; }
+  else { const mkEl=e.target.closest&&e.target.closest('.mk'); drag={mode:'pan',sx:e.clientX,sy:e.clientY,vx:view.x,vy:view.y,mk:mkEl&&mkEl.dataset.id!==undefined?+mkEl.dataset.id:null}; $('view').classList.add('panning'); }
+  e.preventDefault();
+});
+window.addEventListener('mousemove',e=>{
+  if(drag&&drag.mode==='pan'){ view.x=drag.vx+(e.clientX-drag.sx); view.y=drag.vy+(e.clientY-drag.sy); applyView(); return; }
+  if(drag&&drag.mode==='draw'){ const [px,py]=screenToMap(e); const [wx,wy]=P2W(px,py); box=[drag.start[0],drag.start[1],wx,wy]; draw(); return; }
+  hover(e);
+});
+window.addEventListener('mouseup',e=>{
+  if(!drag)return; $('view').classList.remove('panning');
+  if(drag.mode==='pan'&&drag.mk!=null&&Math.abs(e.clientX-drag.sx)<5&&Math.abs(e.clientY-drag.sy)<5) openSpot(drag.mk,e.clientX,e.clientY);
+  else if(drag.mode==='pan'&&Math.abs(e.clientX-drag.sx)<5&&Math.abs(e.clientY-drag.sy)<5) $('spot').style.display='none';
+  if(drag.mode==='draw'){ if(Math.abs(box[2]-box[0])<20||Math.abs(box[3]-box[1])<20) box=null; draw(); renderBoxInfo(); }
+  drag=null;
+});
+function hover(e){
+  const el=$('tip'); const n=e.target.closest&&e.target.closest('.mk');
+  if(!n){ el.style.display='none'; return; }
+  if(n.dataset.hid!==undefined){ const h=D.humans[+n.dataset.hid]; const ch=showSpoilers&&lastChanges&&lastChanges.find(c=>c.human&&c.id===h.id); const t=D.htypes[h.htype];
+    let hh=`<h4>${esc(t.name)}${ch?' → '+esc(nameOf(ch.to))+(ch.cross?' (machine)':''):''}</h4><div class="small">${FACNAME[t.faction]} · ${{camp:'Bandit camp',world:'World',story:'Story mission',cauldron:'Cauldron'}[h.cat]||h.cat} · ${esc(h.scene.replace(/_/g,' '))}</div>`;
+    el.innerHTML=hh; el.style.display='block'; el.style.left=(e.clientX+14)+'px'; el.style.top=(e.clientY+14)+'px'; return; }
+  if(n.dataset.cauldron!==undefined){ const c=D.cauldrons[+n.dataset.cauldron];
+    const inside=D.sites.filter(s=>s.cat==='cauldron'&&s.cauldron===c.name).length;
+    el.innerHTML=`<h4>Cauldron ${esc(c.name)}</h4><div class="small">${c.dlc?'Frozen Wilds · ':''}${inside?inside+' machine spawns inside · ':''}${C.include_cauldrons?'randomized (Cauldrons ticked)':'not randomized (tick “Also randomize Cauldrons”)'}</div>`;
+    el.style.display='block'; el.style.left=(e.clientX+14)+'px'; el.style.top=(e.clientY+14)+'px'; return; }
+  const s=D.sites[+n.dataset.id]; const changed=showSpoilers&&lastChanges&&lastChanges.find(c=>!c.human&&c.id===s.id);
+  const ai=areaIndexOf(s);
+  let h=`<h4>${esc(D.names[s.machine])}${VARIANT[s.variant]||''}${changed?' → '+esc(nameOf(changed.to))+(changed.cross?' (human)':'')+(VARIANT[changed.variant]&&changed.variant!=='dlc'?VARIANT[changed.variant]:''):''}</h4>`;
+  if(isBanned(s.machine)&&s.cat!=='boss') h+=`<div class="small" style="color:#ff9d9d">${siteOff(s)?'Switched off, but left alone here (tick '+({cauldron:'Cauldrons',story:'story missions',hg:'Hunting Grounds'}[s.cat])+' to replace it)':'Switched off - will be replaced'}</div>`;
+  h+=`<div class="small">${CATNAME[s.cat]||s.cat} · ${esc(s.scene.replace(/_/g,' '))}</div>`;
+  if(pinOf(s)) h+=`<div class="small" style="color:#e8b34b">📌 ${pinOf(s)==='keep'?'Kept as it is':'Picked by hand: '+esc(D.names[pinOf(s)])}</div>`;
+  h+=`<div class="small" style="color:var(--dim)">Click to pick what goes here</div>`;
+  if(s.cat==='boss') h+=`<div class="small" style="color:${C.bosses&&C.bosses.on?'#e8b34b':'var(--dim)'}">${C.bosses&&C.bosses.on?'Randomized by the Bosses option':'Not randomized (tick “Randomize boss fights”)'}</div>`;
+  else h+=`<div class="small" style="color:var(--dim)">${wholeOn()?'Whole map':(ai>=0?'Area: '+esc(C.areas[ai].name):'Rest of the world')}${s.exact?'':' · approximate position'}</div>`;
+  el.innerHTML=h; el.style.display='block'; el.style.left=(e.clientX+14)+'px'; el.style.top=(e.clientY+14)+'px';
+}
+
+// ---------- panel ----------
+const nameOf=x=>(D.names[x]||(D.htypes[x]&&D.htypes[x].name)||x);
+const CATNAME={world:'World site',cauldron:'Cauldron',story:'Story mission',hg:'Hunting Grounds',boss:'Boss fight'};
+function siteOff(s){ return (s.cat==='cauldron'&&!C.include_cauldrons)||(s.cat==='story'&&!C.include_story)||(s.cat==='hg'&&!C.include_hg)||(s.cat==='boss'&&!(C.bosses&&C.bosses.on)); }
+function sitesIn(rects){ return D.sites.filter(s=>s.cat==='world'&&rects.some(r=>inRect(s,r))).length; }
+// ---------- map key ----------
+(()=>{ let min=window.innerWidth<1500; try{ const v=localStorage.getItem('hzdkey'); if(v!==null) min=v==='1'; }catch(e){}
+  const set=m=>{ $('legend').classList.toggle('min',m); $('legtg').textContent=m?'Key ▸':'Key ▾'; try{ localStorage.setItem('hzdkey',m?'1':'0'); }catch(e){} };
+  set(min); $('legtg').onclick=()=>set(!$('legend').classList.contains('min')); })();
+// ---------- tabs ----------
+let curTab='world'; try{ curTab=localStorage.getItem('hzdtab')||'world'; }catch(e){}
+function setTab(t){ curTab=t; try{ localStorage.setItem('hzdtab',t); }catch(e){}
+  document.querySelectorAll('#tabs button').forEach(b=>{ const on=b.dataset.tab===t; b.classList.toggle('on',on); b.setAttribute('aria-selected',on); });
+  document.querySelectorAll('#rbody .tab').forEach(d=>d.classList.toggle('on',d.dataset.tab===t)); $('rbody').scrollTop=0; }
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$('rgame').onclick=()=>{ setTab('setup'); $('gedit').classList.add('on'); $('gchange').textContent='Close'; };
+const RISKY=[['include_cauldrons','Cauldrons','ocauldron'],['include_story','Story fights','ostory'],['include_hg','Hunting Grounds','ohg']];
+function riskyList(){ const l=RISKY.filter(([k])=>C[k]).map(([k,n,id])=>[n,id]);
+  if(C.bosses&&C.bosses.on) l.push(['Bosses','oboss']);
+  [['mole','Rockbreaker'],['hackbot','Corruptor'],['warrobot','Deathbringer']].forEach(([m,n])=>{ if((C.groups.Large||[]).includes(m)) l.push([n,'o'+m]); });
+  if((C.humans||{}).camps&&(C.humans||{}).mode!=='off') l.push(['Camp factions','hucamps']);
+  if((C.humans||{}).mode==='chaos') l.push(['Chaos humans','humode']);
+  if((C.cross||{}).on) l.push(['Humans ⇄ machines','xon']);
+  if((C.herd_size||100)>150) l.push(['Herds '+C.herd_size+'%','hsize']);
+  const p=Object.keys(C.pins||{}).length; if(p) l.push(['📌 '+p+' picked','pinsum']);
+  return l; }
+function renderBadges(){ if(!C||!D) return;
+  const on=(C.areas||[]).filter(a=>!a.disabled).length;
+  $('bw').textContent=wholeOn()?'Whole map':(on?on+' area'+(on>1?'s':''):'Rest only');
+  const rk=riskyList().filter(([n])=>!n.startsWith('📌')&&!n.startsWith('Herds')&&n!=='Camp factions'&&n!=='Chaos humans').length;
+  $('bm').textContent=rk?'⚠ '+rk+' risky':''; $('bm').className=rk?'warn':'';
+  const hm=(C.humans||{}).mode||'off'; const ht=C.human_tough||{}, htOn=['health','damage','health_m','damage_m'].some(k=>Object.keys(ht[k]||{}).length);
+  $('bh').textContent={off:'Off',mix:'Same faction',camps:'Swap camps',chaos:'Chaos'}[hm]+(htOn?' · HP/DMG':'')+((C.cross||{}).on?' · ⇄':'');
+  $('bs').textContent=D.game_valid?'':'⚠ folder'; $('bs').className=D.game_valid?'':'warn';
+  const r=$('risky'); r.innerHTML=''; riskyList().forEach(([n,id])=>{ const b=document.createElement('button'); b.textContent=n; b.title='Turned on - click to see it';
+    b.onclick=()=>{ const el=$(id); const tab=el&&el.closest('.tab'); if(tab) setTab(tab.dataset.tab); if(el){ el.scrollIntoView({block:'center'}); const sec=el.closest('section'); if(sec){ sec.style.transition='box-shadow .3s'; sec.style.boxShadow='0 0 0 2px var(--gold)'; setTimeout(()=>sec.style.boxShadow='',900);} } }; r.appendChild(b); }); }
+function renderPanel(){
+  const box_=$('areas'); box_.innerHTML='';
+  const add=(i,a,meta)=>{ const d=document.createElement('div'); const off=!!a.disabled;
+    d.className='area'+((current===i)?' on':'')+(off?' off':'');
+    const tip=off?'Turned off - click to turn this area back on':(i==='rest'?'On - click to stop changing machines outside your areas':'On - click to turn this area off (its spots then follow whatever is underneath)');
+    d.innerHTML=`<button class="tg${off?'':' on'}" role="switch" aria-checked="${!off}" title="${tip}" aria-label="${esc(a.name)} on/off"></button><span class="sw" style="background:${a.color}"></span><span class="aname">${esc(a.name)}</span><span class="meta">${off?'Turned off':(a.mode==='off'?'Off':(a.mode==='chaotic'?'Chaotic':'Grouped'))+meta}</span>`;
+    d.querySelector('.tg').onclick=e=>{ e.stopPropagation(); a.disabled=!a.disabled; if(!a.disabled) delete a.disabled; changed(); };
+    d.onclick=()=>{current=i;draw();renderPanel()}; box_.appendChild(d); };
+  C.areas.forEach((a,i)=>add(i,a,' · '+sitesIn(a.rects)+' sites'));
+  add('rest',C.rest,'');
+  const a=curArea();
+  $('edtitle').textContent=current==='rest'?'Rest of the world':'Area settings';
+  $('aname').value=a.name; $('aname').disabled=current==='rest';
+  setSeg('amode',a.mode||'off'); $('aseed').value=a.seed;
+  $('achance').value=a.chance??100; $('achancev').textContent=(a.chance??100)+'%';
+  $('aclass').value=a.class_chance||0; $('aclassv').textContent=(a.class_chance||0)+'%';
+  $('adiff').value=a.difficulty||0; $('adiffv').textContent=['Much easier','Easier','Same','Harder','Much harder'][(+a.difficulty||0)+2];
+  $('arearow').style.display=current==='rest'?'none':'flex';
+  setSeg('hmode',C.herds.mode||'off'); $('hseed').value=C.herds.seed;
+  const w=W(), on=wholeOn(); $('won').checked=on; $('wholesec').classList.toggle('on',on);
+  setSeg('wmode',w.mode); $('wseed').value=w.seed; $('wchance').value=w.chance??100; $('wchancev').textContent=(w.chance??100)+'%';
+  $('wclass').value=w.class_chance||0; $('wclassv').textContent=(w.class_chance||0)+'%';
+  $('wdiff').value=w.difficulty||0; $('wdiffv').textContent=['Much easier','Easier','Same','Harder','Much harder'][(+w.difficulty||0)+2]; $('wherds').checked=w.herds!==false;
+  document.querySelectorAll('section.pausable').forEach(sec=>sec.classList.toggle('paused',on&&(sec.id!=='herdsec'||w.herds!==false)));
+  renderMachines(); renderHistory(); renderPresets(); renderTough(); renderHumanTough(); renderHWeights(); renderPins();
+  const H=C.humans=C.humans||{mode:'off',seed:1}; setSeg('humode',H.mode||'off'); $('huseed').value=H.seed??1; $('hucamps').checked=!!H.camps; $('hufw').checked=!!H.fw_anywhere;
+  $('humodehint').textContent={off:'Human enemies stay as they are.',mix:'Each human becomes another type from their own faction (a bandit archer might become a bandit heavy). Camps always stay on one side.',camps:'Every encounter switches to another faction - e.g. an Eclipse site becomes bandits - with archers staying archers and heavies staying heavies.',chaos:'Any human type anywhere. Factions get mixed and may fight each other.'}[H.mode||'off'];
+  ['mole','hackbot','warrobot'].forEach(m=>{ const on=(C.groups.Large||[]).includes(m); $('o'+m).checked=on; $('w'+m).classList.toggle('on',on); });
+  const hz=C.herd_size||100; $('hsize').value=hz; $('hsizev').textContent=hz===100?'Normal (100%)':hz+'%'; $('hsizewarn').classList.toggle('on',hz>150);
+  $('ocauldron').checked=!!C.include_cauldrons; $('ostory').checked=!!C.include_story;
+  $('ofwg').checked=!!C.fw_anywhere_grouped; $('ofwc').checked=!!C.fw_anywhere_chaotic;
+  $('regionchips').innerHTML=''; (D.regions||[]).forEach((rg,i)=>{ const b=document.createElement('button'); const ai=regionArea(rg), used=ai>=0, off=used&&C.areas[ai].disabled;
+    b.className='chip'+(used?(off?' off':' used'):''); b.textContent=(used?(off?'○ ':'● '):'＋ ')+rg.name;
+    b.title=used?(off?'Off - click to turn on':'On - click to turn off'):'Click to make this region an area (on)';
+    b.setAttribute('aria-pressed',used&&!off);
+    b.onclick=()=>toggleRegion(i); $('regionchips').appendChild(b); });
+  $('wcauldron').classList.toggle('on',!!C.include_cauldrons); $('wstory').classList.toggle('on',!!C.include_story);
+  const X=C.cross=C.cross||{on:false,to_human:10,to_machine:10,seed:1}; $('xon').checked=!!X.on; $('xbody').style.display=X.on?'':'none'; $('wcross').classList.toggle('on',!!X.on);
+  $('xth').value=X.to_human??10; $('xthv').textContent=(X.to_human??10)+'%'; $('xtm').value=X.to_machine??10; $('xtmv').textContent=(X.to_machine??10)+'%'; $('xseed').value=X.seed??1; $('xcamps').checked=!!X.camps;
+  $('ohg').checked=!!C.include_hg; $('whg').classList.toggle('on',!!C.include_hg);
+  const B=C.bosses=C.bosses||{on:false,mode:'big',seed:1}; $('oboss').checked=!!B.on; $('wboss').classList.toggle('on',!!B.on); $('bossopts').style.display=B.on?'':'none';
+  setSeg('bmode',B.mode||'big'); $('bseed').value=B.seed??1; $('bosscount').textContent='('+D.sites.filter(x=>x.cat==='boss').length+' machines)'; $('oflyer').checked=C.chaotic_keep_flyers_separate!==false;
+  renderBoxInfo(); renderBadges();
+}
+function renderBoxInfo(){ $('boxinfo').textContent=box?`Box drawn · ${sitesIn([box])} world sites inside.`:'Draw a box on the map (▭ Draw area, or Shift+drag).'; }
+function setSeg(id,v){ document.querySelectorAll('#'+id+' button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); }
+function saveOnly(){ lastChanges=null; if(typeof spoilUI==='function') spoilUI(); clearTimeout(saveT); saveT=setTimeout(()=>fetch('/api/save',{method:'POST',body:JSON.stringify(C)}),400); }
+const TGROUP=m=>{ for(const g of ['Small','Medium','Large','Flyer']) if((C.groups[g]||[]).includes(m)) return g; return 'Other'; };
+function changed(redraw=true){ lastChanges=null; if($('preview').classList.contains('on')) pvSet('<span class="small" style="color:var(--dim)">Settings changed - press 🔍 Preview again.</span>'); if(typeof spoilUI==='function') spoilUI(); clearTimeout(saveT); saveT=setTimeout(()=>fetch('/api/save',{method:'POST',body:JSON.stringify(C)}),400); if(redraw)draw(); renderPanel(); }
+const rnd=()=>Math.floor(Math.random()*1000000);
+const setTool=t=>{tool=t;$('tPan').classList.toggle('on',t==='pan');$('tDraw').classList.toggle('on',t==='draw');$('view').classList.toggle('drawing',t==='draw');};
+$('tPan').onclick=()=>setTool('pan'); $('tDraw').onclick=()=>setTool('draw'); $('tFit').onclick=fit;
+$('tIn').onclick=()=>{const r=$('view').getBoundingClientRect();zoomAt(1.3,r.width/2,r.height/2)};
+$('tOut').onclick=()=>{const r=$('view').getBoundingClientRect();zoomAt(1/1.3,r.width/2,r.height/2)};
+$('newarea').onclick=()=>{ if(!box){msg('Draw a box on the map first.','err');return}
+  C.areas.push({name:'Area '+(C.areas.length+1),color:PALETTE[C.areas.length%PALETTE.length],rects:[box.map(v=>Math.round(v))],mode:'chaotic',seed:rnd(),chance:100,difficulty:0});
+  current=C.areas.length-1; box=null; setTool('pan'); changed(); };
+$('addbox').onclick=()=>{ if(current==='rest'||!box){msg(current==='rest'?'Pick an area in the list first.':'Draw a box first.','err');return}
+  C.areas[current].rects.push(box.map(v=>Math.round(v))); box=null; changed(); };
+$('clearbox').onclick=()=>{box=null;draw();renderBoxInfo();};
+$('clearrects').onclick=()=>{ if(current!=='rest'){C.areas[current].rects=[]; changed();} };
+$('delarea').onclick=()=>{ if(current==='rest')return; C.areas.splice(current,1); current='rest'; changed(); };
+$('zoomarea').onclick=()=>{ const a=curArea(); if(!a.rects||!a.rects.length)return; const xs=a.rects.flatMap(r=>[r[0],r[2]]), ys=a.rects.flatMap(r=>[r[1],r[3]]);
+  const [x0,y0]=W2P(Math.min(...xs),Math.max(...ys)), [x1,y1]=W2P(Math.max(...xs),Math.min(...ys)); const v=$('view').getBoundingClientRect();
+  const s=Math.min(4,Math.min(v.width/(x1-x0),v.height/(y1-y0))*0.7); view={s,x:v.width/2-(x0+x1)/2*s,y:v.height/2-(y0+y1)/2*s}; applyView(); };
+$('aname').oninput=e=>{ if(current!=='rest'){curArea().name=e.target.value; changed();} };
+document.querySelectorAll('#amode button').forEach(b=>b.onclick=()=>{curArea().mode=b.dataset.v; changed();});
+document.querySelectorAll('#hmode button').forEach(b=>b.onclick=()=>{C.herds.mode=b.dataset.v; changed(false);});
+$('aseed').onchange=e=>{curArea().seed=+e.target.value||0; changed();};
+$('dice').onclick=()=>{curArea().seed=rnd(); changed();};
+$('hseed').onchange=e=>{C.herds.seed=+e.target.value||0; changed(false);};
+$('hdice').onclick=()=>{C.herds.seed=rnd(); changed(false);};
+$('achance').oninput=e=>{curArea().chance=+e.target.value; $('achancev').textContent=e.target.value+'%'; changed(false);};
+$('adiff').oninput=e=>{curArea().difficulty=+e.target.value; changed(false);};
+// risky options: ticking asks first, unticking is instant
+let pendingWarn=null;
+function askWarn(kind,onYes,onNo){ pendingWarn={onYes,onNo}; $('mtitle').textContent='⚠ '+WARN[kind].title; $('mbody').innerHTML=WARN[kind].body; $('modal').classList.add('on'); $('mcancel').focus(); }
+function closeWarn(yes){ const p=pendingWarn; pendingWarn=null; $('modal').classList.remove('on'); if(p)(yes?p.onYes:p.onNo)(); }
+$('mok').onclick=()=>closeWarn(true); $('mcancel').onclick=()=>closeWarn(false);
+$('modal').onclick=e=>{ if(e.target===$('modal')) closeWarn(false); };
+window.addEventListener('keydown',e=>{ if(e.key==='Escape'&&pendingWarn) closeWarn(false); });
+function riskyToggle(id,key,kind){ $(id).onchange=e=>{
+  if(!e.target.checked){ C[key]=false; changed(); return; }
+  e.target.checked=false;
+  askWarn(kind,()=>{ C[key]=true; changed(); },()=>{ renderPanel(); }); }; }
+riskyToggle('ocauldron','include_cauldrons','cauldron');
+function setBig(m,on){ C.groups.Large=(C.groups.Large||[]).filter(x=>x!==m); C.excluded=(C.excluded||[]).filter(x=>x!==m);
+  if(on) C.groups.Large.push(m); else C.excluded.push(m); changed(); }
+['mole','hackbot','warrobot'].forEach(m=>{ $('o'+m).onchange=e=>{ if(!e.target.checked){ setBig(m,false); return; } e.target.checked=false; askWarn(m,()=>setBig(m,true),()=>renderPanel()); }; });
+riskyToggle('ostory','include_story','story');
+riskyToggle('ohg','include_hg','hg');
+$('xon').onchange=e=>{ const X=C.cross; if(!e.target.checked){ X.on=false; changed(); return; } e.target.checked=false; askWarn('cross',()=>{ X.on=true; if(!X.to_human&&!X.to_machine){ X.to_human=10; X.to_machine=10; } if(!X.seed) X.seed=rnd(); changed(); },()=>renderPanel()); };
+$('xth').oninput=e=>{ C.cross.to_human=+e.target.value; $('xthv').textContent=e.target.value+'%'; saveOnly(); };
+$('xtm').oninput=e=>{ C.cross.to_machine=+e.target.value; $('xtmv').textContent=e.target.value+'%'; saveOnly(); };
+$('xseed').onchange=e=>{ C.cross.seed=+e.target.value||0; changed(false); };
+$('xdice').onclick=()=>{ C.cross.seed=rnd(); changed(false); };
+$('xcamps').onchange=e=>{ C.cross.camps=e.target.checked; changed(false); };
+$('oboss').onchange=e=>{ const B=C.bosses=C.bosses||{mode:'big',seed:1}; if(!e.target.checked){ B.on=false; changed(); return; } e.target.checked=false; askWarn('boss',()=>{ B.on=true; B.mode=B.mode||'big'; changed(); },()=>renderPanel()); };
+document.querySelectorAll('#bmode button').forEach(b=>b.onclick=()=>{ C.bosses.mode=b.dataset.v; changed(false); });
+$('bseed').onchange=e=>{ C.bosses.seed=+e.target.value||0; changed(false); };
+$('bdice').onclick=()=>{ C.bosses.seed=rnd(); changed(false); };
+// label sits in the middle of the machine sites inside the region (the box itself reaches into empty map edges)
+function regionLabelPos(rg){ const r=rg.rect, inside=D.sites.filter(s=>inRect(s,r));
+  if(!inside.length) return W2P((r[0]+r[2])/2,(r[1]+r[3])/2);
+  const xs=inside.map(s=>s.x).sort((a,b)=>a-b), ys=inside.map(s=>s.y).sort((a,b)=>a-b), m=a=>a[Math.floor(a.length/2)];
+  return W2P((r[0]+r[2])/2,m(ys)); }
+// a name on the map; kind: new | on | off. corner=true anchors the pill at a box's top-left corner
+function namePill(pos,label,kind,color,onClick,title,corner){
+  const g=mk('g',{class:'rlabel '+kind,transform:`translate(${pos[0]},${pos[1]})`}); const gi=mk('g',{class:'rli'});
+  const w=26+label.length*7.3, ox=corner?w/2+8:0, oy=corner?20:0;
+  const bg=mk('rect',{x:ox-w/2,y:oy-12,width:w,height:24,rx:12,class:'pbg'});
+  if(kind==='new') { bg.setAttribute('fill','#0b1014'); bg.setAttribute('fill-opacity',0.78); bg.setAttribute('stroke','#e9eef0'); bg.setAttribute('stroke-opacity',0.6); bg.setAttribute('stroke-dasharray','3 2'); }
+  else if(kind==='on') { bg.setAttribute('fill',color); bg.setAttribute('fill-opacity',0.92); bg.setAttribute('stroke','#000'); bg.setAttribute('stroke-opacity',0.5); }
+  else { bg.setAttribute('fill','#0b1014'); bg.setAttribute('fill-opacity',0.7); bg.setAttribute('stroke',color); bg.setAttribute('stroke-dasharray','4 3'); }
+  const t=mk('text',{x:ox,y:oy+5,'text-anchor':'middle','font-size':13,'font-weight':700,fill:kind==='on'?'#0b1014':(kind==='off'?'#9aa7ae':'#e9eef0')}); t.textContent=label;
+  const tt=mk('title',{}); tt.textContent=title; g.appendChild(tt);
+  gi.appendChild(bg); gi.appendChild(t); g.appendChild(gi);
+  g.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); onClick(); });
+  return g; }
+function toggleArea(i){ const a=C.areas[i]; if(a.disabled) delete a.disabled; else a.disabled=true; current=i; changed(); }
+// region name: first click makes it an area (on), then each click turns it off / on
+function toggleRegion(i){ const ai=regionArea(D.regions[i]); if(ai>=0) toggleArea(ai); else addRegion(i); }
+function regionArea(rg){ return C.areas.findIndex(a=>a.region===rg.name); }
+function addRegion(i){ const rg=D.regions[i]; const have=regionArea(rg);
+  if(have>=0){ current=have; draw(); renderPanel(); return; }
+  C.areas.push({name:rg.name,region:rg.name,color:PALETTE[C.areas.length%PALETTE.length],rects:[rg.rect.slice()],mode:'grouped',seed:rnd(),chance:100,difficulty:0});
+  current=C.areas.length-1; changed(); }
+$('won').onchange=e=>{ W().on=e.target.checked; changed(); };
+document.querySelectorAll('#wmode button').forEach(b=>b.onclick=()=>{W().mode=b.dataset.v; changed();});
+$('wseed').onchange=e=>{W().seed=+e.target.value||0; changed();};
+$('wdice').onclick=()=>{W().seed=rnd(); changed();};
+$('wchance').oninput=e=>{W().chance=+e.target.value; $('wchancev').textContent=e.target.value+'%'; changed(false);};
+$('wdiff').oninput=e=>{W().difficulty=+e.target.value; changed(false);};
+$('wclass').oninput=e=>{W().class_chance=+e.target.value; $('wclassv').textContent=e.target.value+'%'; changed(false);};
+$('aclass').oninput=e=>{curArea().class_chance=+e.target.value; $('aclassv').textContent=e.target.value+'%'; changed(false);};
+$('wherds').onchange=e=>{W().herds=e.target.checked; changed(false);};
+$('psave').onclick=()=>{ const n=$('pname').value.trim(); if(!n){ pmsg('Type a name first.','err'); return; }
+  C.presets=C.presets||{}; const had=!!C.presets[n]; C.presets[n]=snapshot(); $('pname').value=''; changed(false); pmsg((had?'Updated':'Saved')+' "'+n+'".','ok'); };
+$('pname').onkeydown=e=>{ if(e.key==='Enter') $('psave').onclick(); };
+$('pload').onclick=async()=>{ try{ const cfg=await decodeSetup($('pcode').value); applySetup(cfg); $('pcode').value=''; pmsg('Code loaded. Save it as a preset if you want to keep it.','ok'); }catch(e){ pmsg("That code didn't work - check it was copied in full.",'err'); } };
+$('surprise').onclick=()=>{ const w=W(); w.on=true; w.mode=Math.random()<0.5?'grouped':'chaotic'; w.seed=rnd(); w.chance=100; w.herds=true; showSpoilers=false; changed(); $('build').onclick(); };
+function setFind(v){ const name=(v||'').trim().toLowerCase(); findM=null;
+  if(name){ for(const [k,n] of Object.entries(D.names)) if(n.toLowerCase()===name){ findM=k; break; }
+    if(!findM) for(const [k,n] of Object.entries(D.names)) if(n.toLowerCase().startsWith(name)){ findM=k; break; } }
+  const n=findM?D.sites.filter(s=>s.machine===findM&&s.cat!=='roaming').length:0;
+  $('findcount').textContent=findM?`${D.names[findM]}: ${n} spot${n===1?'':'s'}`:(name?'No match':''); draw(); }
+$('find').oninput=e=>setFind(e.target.value);
+$('find').onkeydown=e=>{ if(e.key==='Escape'){ e.target.value=''; setFind(''); } };
+$('findx').onclick=()=>{ $('find').value=''; setFind(''); };
+$('hsize').oninput=e=>{ const v=+e.target.value; if(v===100) delete C.herd_size; else C.herd_size=v; $('hsizev').textContent=v===100?'Normal (100%)':v+'%'; $('hsizewarn').classList.toggle('on',v>150); changed(false); };
+document.querySelectorAll('#humode button').forEach(b=>b.onclick=()=>{ const v=b.dataset.v; const H=C.humans=C.humans||{seed:1};
+  if(v==='chaos'&&H.mode!=='chaos'){ askWarn('hchaos',()=>{H.mode='chaos'; changed();},()=>renderPanel()); return; } H.mode=v; changed(); });
+$('huseed').onchange=e=>{ C.humans.seed=+e.target.value||0; changed(false); };
+$('hudice').onclick=()=>{ C.humans.seed=rnd(); changed(false); };
+$('hucamps').onchange=e=>{ if(!e.target.checked){ C.humans.camps=false; changed(); return; } e.target.checked=false; askWarn('hcamps',()=>{C.humans.camps=true; changed();},()=>renderPanel()); };
+$('hufw').onchange=e=>{ C.humans.fw_anywhere=e.target.checked; changed(false); };
+$('tHumans').onclick=()=>{ showHumans=!showHumans; $('tHumans').classList.toggle('on',showHumans); draw(); };
+$('htreset').onclick=()=>{ C.human_tough={}; renderHumanTough(); saveOnly(); };
+$('treset').onclick=()=>{ C.toughness={health:{},damage:{},health_m:{},damage_m:{}}; changed(false); };
+$('mall').onclick=()=>{ C.banned=[]; changed(); };
+$('tRegions').onclick=()=>{ showRegions=!showRegions; $('tRegions').classList.toggle('on',showRegions); draw(); };
+$('ofwg').onchange=e=>{C.fw_anywhere_grouped=e.target.checked; changed(false);};
+$('ofwc').onchange=e=>{C.fw_anywhere_chaotic=e.target.checked; changed(false);};
+$('oflyer').onchange=e=>{C.chaotic_keep_flyers_separate=e.target.checked; changed(false);};
+$('setgame').onclick=()=>gameCall('/api/gamepath',{Path:$('gamepath').value});
+$('gamepath').onkeydown=e=>{ if(e.key==='Enter') $('setgame').onclick(); };
+$('gbrowse').onclick=()=>gameCall('/api/browse');
+$('gdetect').onclick=()=>gameCall('/api/detect');
+$('gchange').onclick=()=>{ const on=!$('gedit').classList.contains('on'); $('gedit').classList.toggle('on',on); $('gchange').textContent=on?'Close':'Change'; if(on) gmsg(''); };
+$('build').onclick=async()=>{
+  $('build').disabled=true; msg('Building…','');
+  try{ const r=await (await fetch('/api/build',{method:'POST',body:JSON.stringify(C)})).json();
+    if(r.ok){ lastChanges=r.changes; D.installed=true; if(r.history){ C.history=r.history; renderHistory(); } setStatus(); draw();
+      msg(r.message+(r.notes&&r.notes.length?'\n'+r.notes.join('\n'):'')+'\nStart (or restart) the game to play it.','ok');
+      const c={}; r.changes.forEach(x=>{const k=x.cross?(x.human?'👤 '+nameOf(x.from)+' → '+nameOf(x.to)+' (machine)':nameOf(x.from)+' → 👤 '+nameOf(x.to)):x.human?('👤 '+D.htypes[x.from].name+' → '+D.htypes[x.to].name):D.names[x.from]+' → '+D.names[x.to]+(x.variant==='corrupted'||x.variant==='cc'?VARIANT[x.variant]:''); c[k]=(c[k]||0)+1});
+      showSpoilers=false; spoilUI();
+      $('changes').innerHTML=Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div><span>${esc(k)}</span><span>${v}</span></div>`).join('');
+    } else msg(r.message,'err');
+  }catch(e){ msg('Lost contact with the randomizer window — is it still open?','err'); }
+  $('build').disabled=false; };
+function spoilUI(){ const has=!!(lastChanges&&lastChanges.length);
+  $('spoilrow').style.display=has?'flex':'none'; $('changes').style.display=has&&showSpoilers?'block':'none';
+  $('legspoil').style.display=has&&showSpoilers?'':'none';
+  $('spoilbtn').textContent=showSpoilers?'🙈 Hide spoilers':'👁 Show spoilers'; }
+$('spoilbtn').onclick=()=>{ showSpoilers=!showSpoilers; spoilUI(); draw(); };
+$('uninstall').onclick=async()=>{ const r=await (await fetch('/api/uninstall',{method:'POST'})).json(); D.installed=false; lastChanges=null; showSpoilers=false; $('changes').innerHTML=''; spoilUI(); setStatus(); draw(); msg(r.message,'ok'); };
+function msg(t,c){ const m=$('msg'); m.textContent=t; m.className=c; }
+window.addEventListener('resize',fit);
+load();
+</script>
+</body>
+</html>
