@@ -34,8 +34,7 @@ installation, using the game's own `oo2core\_\*\_win64.dll` to unpack the archiv
 file against the SHA-256 listed in [`mapdata/manifest.json`](mapdata/manifest.json).
 `mapdata/sites.json` holds only positions, file names and offsets of spawn spots.
 
-<img width="2044" height="953" alt="6" src="https://github.com/user-attachments/assets/05ff9434-be85-4f89-9f49-f4903030b06b" />
-
+<img width="3838" height="1899" alt="Screenshot 2026-10-08 165324" src="https://github.com/user-attachments/assets/ea67605e-9231-4fdc-abe7-410733237380" />
 
 ## Building
 
