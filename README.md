@@ -4,8 +4,6 @@ A map-based enemy randomizer for **Horizon Zero Dawn Complete Edition** on PC (t
 release, not Remastered). Pick areas on the game's own world map and choose which machines and
 human enemies appear there.
 
-!\[icon](tools/winres/icon\_1024.png)
-
 ## Features
 
 * Randomize machines by area, by ready-made region, or across the whole map, with seeds,
