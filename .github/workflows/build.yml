@@ -1,0 +1,54 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # only used to attach the exe to a release when a version tag is pushed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.7"   # same version as the released builds (reproducible output)
+
+      - name: Check the icon/version resource is made from this source
+        run: |
+          VERSION=$(grep -oP 'const version = "\K[^"]+' main.go)
+          cd tools/winres
+          go run . "$RUNNER_TEMP/rsrc_check.syso" "Horizon Zero Dawn Enemy Randomizer (Map)" "HZD Enemy Randomizer Map" "$VERSION.0" "HZD_EnemyRandomizer_Map.exe" icon_1024.png
+          cd ../..
+          cmp "$RUNNER_TEMP/rsrc_check.syso" rsrc_windows_amd64.syso
+
+      - name: Test
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Build Windows exe
+        run: |
+          mkdir -p dist
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o dist/HZD_EnemyRandomizer_Map.exe .
+          cp docs/README_Map.txt docs/CHANGELOG_Map.txt BUILDING.txt LICENSE dist/
+          (cd dist && sha256sum HZD_EnemyRandomizer_Map.exe > SHA256SUMS.txt && cat SHA256SUMS.txt)
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HZD_EnemyRandomizer_Map
+          path: dist/
+
+      - name: Attach to the release (version tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "See docs/README_Map.txt for what's new."
+          gh release upload "$GITHUB_REF_NAME" dist/* --clobber
