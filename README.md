@@ -34,6 +34,9 @@ installation, using the game's own `oo2core\_\*\_win64.dll` to unpack the archiv
 file against the SHA-256 listed in [`mapdata/manifest.json`](mapdata/manifest.json).
 `mapdata/sites.json` holds only positions, file names and offsets of spawn spots.
 
+<img width="2044" height="953" alt="6" src="https://github.com/user-attachments/assets/05ff9434-be85-4f89-9f49-f4903030b06b" />
+
+
 ## Building
 
 See [BUILDING.txt](BUILDING.txt). In short, with Go 1.24.7:
