@@ -1,4 +1,4 @@
-# HZD Enemy Randomizer (Map)
+# HZD Enemy Randomizer.
 
 A map-based enemy randomizer for **Horizon Zero Dawn Complete Edition** on PC (the original
 release, not Remastered). Pick areas on the game's own world map and choose which machines and
